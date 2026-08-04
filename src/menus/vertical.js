@@ -2,8 +2,8 @@ export default [
   { heading: 'Menus' },
   {
     name: 'Home',
-    icon: 'mdi-view-dashboard-outline',
-    to: { name: 'medication-administrations' },
+    icon: 'mdi-account-injury-outline',
+    to: { name: 'patient-reminders' },
   },
   {
     name: 'Blank Page',

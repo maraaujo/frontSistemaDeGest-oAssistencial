@@ -1,20 +1,30 @@
-import router from '@/router';
 import axios from 'axios';
 import { config } from './urls';
 
 const apiHost = config.apiHost;
 
-axios.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401 || error.response?.status === 403) {
-            router.push({ path: "/" });
-        }
+axios.interceptors.request.use(
+  async (config) => {
+    if (config.url?.includes('viacep')) return config;
 
-        return Promise.reject(error);
+ const storedData = sessionStorage.getItem("tltkn");
+
+if (storedData) {
+  try {
+    const user = JSON.parse(storedData);
+
+    if (user?.token) {
+      config.headers.Authorization = `Bearer ${user.token}`;
     }
-);
+  } catch (error) {
+    console.error("Erro ao ler token:", error);
+  }
+}
 
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 const getFullUrl = async (url) => {
     return await axios.get(`${url}`);

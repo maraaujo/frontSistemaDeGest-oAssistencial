@@ -2,7 +2,7 @@ export default [
   {
     name: 'Home',
     icon: 'mdi-view-dashboard-outline',
-    to: { name: 'medication-administrations' },
+    to: { name: 'patient-reminders' },
   },
   {
     name: 'Blank Page',

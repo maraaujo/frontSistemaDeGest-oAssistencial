@@ -5,6 +5,9 @@ const defaultUser = {
   email: null,
   avatarUrl: null,
   name: null,
+  userId: null,
+  userType: null,
+  institutionId: null,
   menus: [],
   recebedores: [],
   idsPerfil: [],
@@ -25,55 +28,49 @@ export default {
 
 async logIn(email, password) {
   try {
-    //Inicializa o resultado do login com valores padrão
-    const loginResult = { isOk: true, isAuthorized: true, data: null };
-
-    //Chama a API de login
     const ret = await loginAccountsApi.login({ email, password });
 
-    // Verifica se a resposta da API indica sucesso
+    console.log("RETORNO LOGIN API:", ret.data);
+
     if (!ret?.data?.success) {
       return {
-        ...loginResult,
         isOk: false,
         isAuthorized: false,
-        message: ret?.data?.errorMessage || ret?.data?.message || "Falha ao autenticar usuário."
+        data: null,
+        message: ret?.data?.errorMessage || "Falha ao autenticar usuário."
       };
     }
-    // Extrai os dados de login da resposta da API
+
     const loginData = ret.data.data;
 
-    // Verifica se o token foi retornado pela API
     if (!loginData?.token) {
       return {
-        //os tres pontos de js são para copiar o objeto loginResult e adicionar ou sobrescrever propriedades
-        ...loginResult,
         isOk: false,
         isAuthorized: false,
+        data: null,
         message: "Token não retornado pela API."
       };
     }
-// Atualiza o objeto de usuário com os dados retornados pela API
+
     this._user = {
       ...defaultUser,
       email: loginData.email,
       token: loginData.token,
-      name: loginData.email,
       userId: loginData.userId,
       userType: loginData.userType,
-      institutionId: loginData.institutionId,
-      menus: loginData.menus || [],
-      idsPerfil: loginData.idsProfile || [],
-      avatarUrl: loginData.avatar || null,
+      name: loginData.email,
+      menus: [],
+      idsPerfil: [],
+      avatarUrl: null,
     };
-// Salva os dados do usuário no sessionStorage
-    console.log('user', this._user);
+
+    console.log("USUARIO SALVO:", this._user);
 
     this.saveUserStorage(this._user);
 
-    // Retorna o resultado do login com os dados do usuário
     return {
-      ...loginResult,
+      isOk: true,
+      isAuthorized: true,
       data: this._user
     };
 

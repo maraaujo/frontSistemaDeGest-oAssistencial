@@ -5,7 +5,7 @@ const getById = async (id) => await apiService.get(`/MedicationAdministration/Ge
 const create = async (model) => await apiService.post('/MedicationAdministration/CreateMedicationAdministration', model);
 const update = async (model) => await apiService.post('/MedicationAdministration/UpdateMedicationAdministration', model);
 const remove = async (id) => await apiService.delete(`/MedicationAdministration/DeleteMedicationAdministration/${id}`);
-const filter = async (filter) => await apiService.post('/MedicationAdministration/FilterMedicationAdministration', filter);
+const filter = async (filter) => await apiService.post('/MedicationAdministration/GetPagedMedicationAdministrationByFilter', filter);
 
 export const medicationAdministrationsApi = {
   getAll,

@@ -11,8 +11,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'medication-administrations',
-      component: () => import('@/views/MedicationAdministrations/index.vue'),
+      name: 'patient-reminders',
+      component: () => import('@/views/PatientReminders/index.vue'),
       meta: {
         layout: 'content',
       },

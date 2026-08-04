@@ -1,0 +1,43 @@
+{
+  "include": [
+    "./vite.config.*",
+    "./src/**/*",
+    "./src/**/*.vue",
+    "./appConfig.js"
+  ],
+  "exclude": [
+    "./dist",
+    "./node_modules"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "esnext",
+    "allowSyntheticDefaultImports": true,
+    "module": "esnext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@appConfig": [
+        "./appConfig.js"
+      ],
+      "@axios": [
+        "./src/plugins/axios.js"
+      ],
+      "@images/*": [
+        "./src/assets/images/*"
+      ],
+      "@styles/*": [
+        "./src/styles/*"
+      ],
+      "@plugins/*": [
+        "./src/plugins/*"
+      ]
+    },
+    "types": [
+      "vite/client"
+    ]
+  }
+}

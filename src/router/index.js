@@ -11,12 +11,50 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/login',
+    },
+    {
+      path: '/patient-reminders',
       name: 'patient-reminders',
       component: () => import('@/views/PatientReminders/index.vue'),
       meta: {
         layout: 'content',
       },
     },
+    {
+  path: '/patient-medicines',
+  name: 'patient-medicines',
+  component: () => import('@/views/PatientMedicines/index.vue'),
+  meta: {
+        layout: 'content',
+      },
+},
+    {
+  path: '/patient-medicines-create',
+  name: 'patient-medicines-create',
+  component: () => import('@/views/PatientMedicines/create.vue'),
+ meta: {
+        layout: 'content',
+      },
+},
+{
+  path: '/patient-medicines/edit/:id',
+  name: 'patient-medicines-edit',
+  component: () => import('@/views/PatientMedicines/edit.vue'),
+  meta: {
+    requiresAuth: true,
+    layout: 'content',
+  },
+},
+{
+  path: '/patient-medicines/new',
+  name: 'patient-medicines-new',
+  component: () => import('@/views/PatientMedicines/create.vue'),
+  meta: {
+    requiresAuth: true,
+    layout: 'content',
+  },
+},
     {
       path: '/blank',
       name: 'blank',

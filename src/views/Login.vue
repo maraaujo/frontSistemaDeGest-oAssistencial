@@ -153,7 +153,7 @@ const submit = async () => {
     }
 
     router.push({
-      path: `/`,
+      path: `/patient-reminders`,
     });
   } catch (error) {
     console.error(error);

@@ -2,13 +2,13 @@ export default [
   { heading: 'Menus' },
   {
     name: 'Home',
-    icon: 'mdi-account-injury-outline',
+    icon: 'mdi-account-injury',
     to: { name: 'patient-reminders' },
   },
   {
-    name: 'Blank Page',
-    icon: 'mdi-file-outline',
-    to: { name: 'blank' },
+    name: 'Patient Medicines',
+    icon: 'mdi-pill',
+    to: { name: 'patient-medicines' },  
   },
-  { name: 'Documentation', icon: 'mdi-text-box-outline', href: 'https://docs.icreatorstudio.com/', target: '_blank' },
+
 ]

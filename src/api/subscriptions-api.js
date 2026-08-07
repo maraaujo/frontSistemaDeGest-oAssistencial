@@ -3,7 +3,7 @@ import { apiService } from './api-service';
 const getAll = async () => await apiService.get('/Subscription/GetAllSubscriptions');
 const getById = async (id) => await apiService.get(`/Subscription/GetSubscriptionById/${id}`);
 const create = async (model) => await apiService.post('/Subscription/CreateSubscription', model);
-const update = async (model) => await apiService.post('/Subscription/UpdateSubscription', model);
+const update = async (id) => await apiService.post(`/Subscription/UpdateSubscription/${id}`);
 const remove = async (id) => await apiService.delete(`/Subscription/DeleteSubscription/${id}`);
 
 // const simulatePaymentApproved = async (subscriptionId) =>

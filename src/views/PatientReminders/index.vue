@@ -1,226 +1,130 @@
 <template>
   <VRow>
     <VCol cols="12">
-      <VStepper v-model="currentStep">
-        <VStepperItem
-          title="Lembretes de Medicação"
-          color="primary"
-          icon="mdi-pill"
-          :complete="currentStep > 1"
-        />
+      <VCard class="reminders-panel">
+        <VCardText class="pa-6">
+          <div class="d-flex align-center justify-space-between flex-wrap gap-4">
+            <div class="d-flex align-center gap-4">
+              <VAvatar color="primary" variant="tonal" size="56">
+                <VIcon icon="mdi-pill" size="32" />
+              </VAvatar>
 
-        <VForm @submit.prevent="submit">
-          <VStepperWindow
-            v-model="currentStep"
-            :touch="false"
-          >
-            <VStepperWindowItem>
-              <VRow>
-                <VCol cols="12">
-                  <VCard class="mb-6">
-                    <VCardText>
-                      <div class="d-flex align-center justify-space-between flex-wrap gap-4">
-                        <div>
-                          <h2 class="text-h5 font-weight-bold mb-1">
-                            Lembretes de Medicação
-                          </h2>
+              <div>
+                <h1 class="text-h4 font-weight-bold mb-1">
+                  Próximos medicamentos
+                </h1>
+                <p class="text-body-1 text-medium-emphasis mb-0">
+                  Acompanhamento dos medicamentos que devem ser administrados em breve
+                </p>
+              </div>
+            </div>
 
-                          <p class="text-body-2 text-medium-emphasis mb-0">
-                            Acompanhe os horários previstos para administração de medicamentos dos acolhidos.
-                          </p>
-                        </div>
+            <div class="d-flex align-center gap-3 flex-wrap">
+              <VChip color="primary" variant="tonal" size="large">
+                <VIcon start icon="mdi-format-list-bulleted" />
+                {{ sortedReminders.length }} lembrete{{ sortedReminders.length === 1 ? '' : 's' }}
+              </VChip>
 
-                        <VChip
-                          color="primary"
-                          variant="tonal"
-                          size="large"
-                        >
-                          <VIcon
-                            start
-                            icon="mdi-clock-outline"
-                          />
-                          Horários
-                        </VChip>
-                      </div>
-                    </VCardText>
-                  </VCard>
-                </VCol>
+              <VBtn
+                variant="tonal"
+                color="primary"
+                prepend-icon="mdi-refresh"
+                :loading="loading"
+                @click="getPatientReminders"
+              >
+                Atualizar
+              </VBtn>
 
-                <VCol cols="3">
-                  <VTextField
-                    v-model="filtermodel.patientName"
-                    label="Nome do acolhido"
-                    prepend-inner-icon="mdi-account-outline"
-                  />
-                </VCol>
+              <VBtn
+                variant="outlined"
+                color="primary"
+                prepend-icon="mdi-fullscreen"
+                @click="toggleFullscreen"
+              >
+                Tela cheia
+              </VBtn>
+            </div>
+          </div>
 
-                <VCol cols="3">
-                  <VTextField
-                    v-model="filtermodel.medicineName"
-                    label="Medicamento"
-                    prepend-inner-icon="mdi-pill"
-                  />
-                </VCol>
+          <div class="text-caption text-medium-emphasis mt-4">
+            <VIcon icon="mdi-update" size="16" class="me-1" />
+            Atualização automática a cada minuto
+            <span v-if="lastUpdated"> · Última atualização: {{ lastUpdated }}</span>
+          </div>
+        </VCardText>
 
-                <VCol cols="3">
-                  <VTextField
-                    v-model="filtermodel.responsibleEmployeeName"
-                    label="Funcionário responsável"
-                    prepend-inner-icon="mdi-account-nurse-outline"
-                  />
-                </VCol>
+        <VDivider />
 
-                <VCol cols="3">
-                  <VTextField
-                    v-model="filtermodel.referenceDate"
-                    label="Data"
-                    type="date"
-                    prepend-inner-icon="mdi-calendar-outline"
-                  />
-                </VCol>
+        <VDataTable
+          :headers="headers"
+          :items="sortedReminders"
+          :loading="loading"
+          loading-text="Carregando lembretes..."
+          no-data-text="Nenhum medicamento previsto para os próximos minutos."
+          class="reminders-table text-no-wrap"
+          hide-default-footer
+          :items-per-page="-1"
+        >
+          <template #item.patientName="{ item }">
+            <div class="py-2">
+              <div class="text-h6 font-weight-bold">
+                {{ item.patientName || 'Acolhido não informado' }}
+              </div>
+              <span v-if="item.patientId" class="text-caption text-medium-emphasis">
+                ID: {{ item.patientId }}
+              </span>
+            </div>
+          </template>
 
-                <VCol cols="12">
-                  <div class="d-flex justify-end gap-4">
-                    <VBtn
-                      color="primary"
-                      rounded="xs"
-                      @click="submit"
-                    >
-                      <VIcon start>
-                        mdi-magnify
-                      </VIcon>
-                      Pesquisar
-                    </VBtn>
+          <template #item.medicineName="{ item }">
+            <div class="py-2">
+              <div class="text-h6 font-weight-bold">
+                {{ item.medicineName || 'Medicamento não informado' }}
+              </div>
+              <span class="text-body-2 text-medium-emphasis">
+                {{ item.dosage || item.prescribedDosage || 'Dose não informada' }}
+              </span>
+            </div>
+          </template>
 
-                    <VBtn
-                      color="primary"
-                      rounded="xs"
-                      variant="outlined"
-                      @click="cleanFilters"
-                    >
-                      Limpar Filtros
-                    </VBtn>
-                  </div>
+          <template #item.administrationTime="{ item }">
+            <VChip color="primary" size="large" variant="tonal">
+              <VIcon start icon="mdi-clock-outline" />
+              {{ formatTime(item.administrationTime) }}
+            </VChip>
+          </template>
 
-                  <label class="left">
-                    Total de Registros Encontrados: {{ paginationData.count }}
-                  </label>
-                </VCol>
-              </VRow>
+          <template #item.nextDoseDateTime="{ item }">
+            <span class="text-body-1 font-weight-medium">
+              {{ formatDateTime(item.nextDoseDateTime) }}
+            </span>
+          </template>
 
-              <VRow>
-                <VCol cols="12">
-                  <VDataTable
-                    title="Lembretes de Medicação"
-                    :headers="headers"
-                    :items="listPatientReminders"
-                    :loading="loading"
-                    loading-text="Carregando... Aguarde"
-                    class="text-no-wrap rounded-t-0"
-                    hide-default-footer
-                  >
-                    <template #item.patientName="{ item }">
-                      <div>
-                        <h6 class="text-sm font-weight-bold">
-                          {{ item.patientName || 'Acolhido não informado' }}
-                        </h6>
+          <template #item.responsibleEmployeeName="{ item }">
+            {{ item.responsibleEmployeeName || 'Não informado' }}
+          </template>
 
-                        <span class="text-caption text-medium-emphasis">
-                          ID: {{ item.patientId || '-' }}
-                        </span>
-                      </div>
-                    </template>
-
-                    <template #item.medicineName="{ item }">
-                      <div>
-                        <h6 class="text-sm font-weight-bold">
-                          {{ item.medicineName || 'Medicamento não informado' }}
-                        </h6>
-
-                        <span class="text-caption text-medium-emphasis">
-                          {{ item.dosage || item.prescribedDosage || '' }}
-                        </span>
-                      </div>
-                    </template>
-
-                    <template #item.administrationTime="{ item }">
-                      <VChip
-                        color="primary"
-                        size="small"
-                        variant="tonal"
-                      >
-                        <VIcon
-                          start
-                          icon="mdi-clock-outline"
-                        />
-                        {{ formatTime(item.administrationTime) }}
-                      </VChip>
-                    </template>
-
-                    <template #item.nextDoseDateTime="{ item }">
-                      {{ formatDateTime(item.nextDoseDateTime) }}
-                    </template>
-
-                    <template #item.responsibleEmployeeName="{ item }">
-                      {{ item.responsibleEmployeeName || 'Não informado' }}
-                    </template>
-
-                    <template #item.minutesRemaining="{ item }">
-                      <VChip
-                        size="small"
-                        :color="getReminderColor(item.minutesRemaining)"
-                      >
-                        {{ getReminderText(item.minutesRemaining) }}
-                      </VChip>
-                    </template>
-
-                    <template #item.alertText="{ item }">
-                      {{ item.alertText || '-' }}
-                    </template>
-                  </VDataTable>
-
-                  <VPagination
-                    :size="size"
-                    color="secondary"
-                    :total-visible="10"
-                    v-model="paginationData.page"
-                    @next="getPatientReminders"
-                    @prev="getPatientReminders"
-                    @click="getPatientReminders"
-                    active-color="primary"
-                    :length="paginationData.totalPages"
-                  />
-                </VCol>
-              </VRow>
-            </VStepperWindowItem>
-          </VStepperWindow>
-        </VForm>
-      </VStepper>
+          <template #item.minutesRemaining="{ item }">
+            <VChip size="large" :color="getReminderColor(item.minutesRemaining)">
+              <VIcon start :icon="item.minutesRemaining < 0 ? 'mdi-alert-circle' : 'mdi-timer-outline'" />
+              {{ getReminderText(item.minutesRemaining) }}
+            </VChip>
+          </template>
+        </VDataTable>
+      </VCard>
     </VCol>
   </VRow>
 </template>
 
 <script setup>
-import { medicinePatientClinicalConditionsApi } from "@/api/medicine-patient-clinical-conditions-api"
-import { onMounted, ref } from "vue"
+import { patientsApi } from "@/api/patients-api"
+import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { toast } from "vue3-toastify"
 
-const currentStep = ref(0)
-const size = ref("default")
-
 const loading = ref(false)
-
-const filtermodel = ref({})
-
+const lastUpdated = ref("")
 const listPatientReminders = ref([])
-
-const paginationData = ref({
-  page: 1,
-  totalPages: 1,
-  itensPerPage: 10,
-  count: 0,
-  perPage: 10,
-})
+let refreshInterval
 
 const headers = [
   { title: "Acolhido", key: "patientName", sortable: true },
@@ -230,22 +134,19 @@ const headers = [
   { title: "Próxima dose", key: "nextDoseDateTime", sortable: true },
   { title: "Responsável", key: "responsibleEmployeeName", sortable: true },
   { title: "Tempo restante", key: "minutesRemaining", sortable: true },
-  { title: "Alerta", key: "alertText", sortable: false },
 ]
 
-const submit = async () => {
-  paginationData.value.page = 1
-  await getPatientReminders()
-}
+const sortedReminders = computed(() => [...listPatientReminders.value].sort((a, b) => {
+  const minutesA = Number.isFinite(Number(a.minutesRemaining)) ? Number(a.minutesRemaining) : Infinity
+  const minutesB = Number.isFinite(Number(b.minutesRemaining)) ? Number(b.minutesRemaining) : Infinity
+
+  return minutesA - minutesB
+}))
 
 const getPatientReminders = async () => {
   try {
     loading.value = true
-
-    filtermodel.value.page = paginationData.value.page
-    filtermodel.value.perPage = paginationData.value.perPage
-
-    const ret = await medicinePatientClinicalConditionsApi.getMedicineReminders(filtermodel.value)
+    const ret = await patientsApi.getMedicineReminders()
 
     if (!ret?.data) {
       toast.error("Não foi possível buscar os lembretes.")
@@ -253,12 +154,6 @@ const getPatientReminders = async () => {
     }
 
     const responseData = ret.data.data || ret.data
-
-    paginationData.value.itensPerPage = responseData.itensPerPage || 10
-    paginationData.value.page = responseData.page || paginationData.value.page
-    paginationData.value.count = responseData.count || responseData.length || 0
-    paginationData.value.totalPages = responseData.totalPages || 1
-
     const reminders =
       responseData.patientReminders ||
       responseData.medicineReminders ||
@@ -266,9 +161,12 @@ const getPatientReminders = async () => {
       responseData.items ||
       responseData
 
-    listPatientReminders.value = Array.isArray(reminders)
-      ? reminders
-      : []
+    listPatientReminders.value = Array.isArray(reminders) ? reminders : []
+    lastUpdated.value = new Date().toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
   } catch (error) {
     console.error(error)
     toast.error("Erro ao carregar lembretes de medicação.")
@@ -277,64 +175,67 @@ const getPatientReminders = async () => {
   }
 }
 
-const cleanFilters = () => {
-  filtermodel.value = {}
-  paginationData.value.page = 1
-  getPatientReminders()
+const toggleFullscreen = async () => {
+  try {
+    if (!document.fullscreenElement)
+      await document.documentElement.requestFullscreen()
+    else
+      await document.exitFullscreen()
+  } catch (error) {
+    console.error("Não foi possível alternar o modo de tela cheia.", error)
+  }
 }
 
 const formatDateTime = value => {
   if (!value) return "-"
 
-  const date = new Date(value)
-
-  return date.toLocaleString("pt-BR", {
+  return new Date(value).toLocaleString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
-    year: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   })
 }
 
-const formatTime = value => {
-  if (!value) return "-"
-
-  if (typeof value === "string") {
-    return value.substring(0, 5)
-  }
-
-  return value
-}
+const formatTime = value => typeof value === "string" ? value.substring(0, 5) : "-"
 
 const getReminderColor = minutesRemaining => {
   if (minutesRemaining === null || minutesRemaining === undefined) return "grey"
-
   if (minutesRemaining < 0) return "error"
-
-  if (minutesRemaining <= 30) return "warning"
-
+  if (minutesRemaining <= 15) return "warning"
   return "success"
 }
 
+// Função para formatar o texto do lembrete com base no tempo restante
 const getReminderText = minutesRemaining => {
   if (minutesRemaining === null || minutesRemaining === undefined) return "Não informado"
-
-  if (minutesRemaining < 0) return "Atrasado"
-
+  if (minutesRemaining < 0) return `Atrasado ${Math.abs(minutesRemaining)} min`
   if (minutesRemaining === 0) return "Agora"
-
-  if (minutesRemaining <= 30) return `Em ${minutesRemaining} min`
-
   return `Em ${minutesRemaining} min`
 }
 
 onMounted(() => {
   getPatientReminders()
+  // Atualiza os lembretes a cada minuto
+ // refreshInterval = window.setInterval(getPatientReminders, 60_000)
 })
+
+onBeforeUnmount(() => window.clearInterval(refreshInterval))
 </script>
 
 <style lang="scss">
 @import "vue3-toastify/dist/index.css";
 @import "@styles/libs/toastify";
+
+.reminders-panel {
+  min-block-size: calc(100vh - 140px);
+}
+
+.reminders-table :deep(th) {
+  font-size: 0.875rem;
+}
+
+.reminders-table :deep(td) {
+  font-size: 1rem;
+}
 </style>

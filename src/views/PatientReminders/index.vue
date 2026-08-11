@@ -63,7 +63,7 @@
           no-data-text="Nenhum medicamento previsto para os próximos minutos."
           class="reminders-table text-no-wrap"
           hide-default-footer
-          :items-per-page="-1"
+          :items-per-page="90"
         >
           <template #item.patientName="{ item }">
             <div class="py-2">

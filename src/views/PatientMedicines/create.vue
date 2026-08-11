@@ -35,10 +35,11 @@
 
               <VCol cols="12" md="4">
                 <div class="d-flex gap-2">
-                  <VAutocomplete v-model="model.patientClinicalConditionId" label="Condição clínica"
-                    :items="patientConditionOptions" item-title="title" item-value="id" :loading="loadingConditions"
-                    :disabled="!model.patientId" :rules="requiredRules" clearable class="flex-grow-1"
-                    placeholder="Selecione uma condição clínica" />
+                  <VAutocomplete v-model="model.patientClinicalConditionDTO" label="Condição clínica"
+                    :items="patientConditionOptions" item-title="title" item-value="id" return-object
+                    :loading="loadingConditions" :disabled="!model.patientId" :rules="requiredRules" clearable
+                    class="flex-grow-1" placeholder="Selecione uma condição clínica"
+                    no-data-text="Nenhuma condição clínica encontrada para este acolhido" />
 
                   <VBtn icon="mdi-plus" color="primary" variant="tonal" :disabled="!model.patientId"
                     @click="conditionDialog = true" />
@@ -47,9 +48,10 @@
 
               <VCol cols="12" md="4">
                 <div class="d-flex gap-2">
-                  <VAutocomplete v-model="model.medicineId" label="Medicamento" :items="medicineOptions"
-                    item-title="title" item-value="id" :loading="loadingOptions" :rules="requiredRules" clearable
-                    class="flex-grow-1" placeholder="Selecione um medicamento" />
+                  <VAutocomplete v-model="model.medicineDTO" label="Medicamento" :items="medicineOptions"
+                    item-title="title" item-value="id" return-object :loading="loadingOptions" :rules="requiredRules"
+                    clearable class="flex-grow-1" placeholder="Selecione um medicamento"
+                    @update:model-value="onMedicineSelected" />
 
                   <VBtn icon="mdi-plus" color="primary" variant="tonal" @click="medicineDialog = true" />
                 </div>
@@ -112,14 +114,8 @@
   </VRow>
 
   <VDialog v-model="conditionDialog" max-width="600">
-    <VCard>
-      <VCardTitle class="pa-6">
-        Nova condição clínica
-      </VCardTitle>
-
-      <VDivider />
-
-      <VCardText class="pa-6">
+    <VCard title="Criar nova condição clínica">
+      <VCardText>
         <VRow>
           <VCol cols="12">
             <VTextField v-model="newCondition.name" label="Nome da condição" placeholder="Ex.: Hipertensão" />
@@ -133,32 +129,24 @@
             <VTextarea v-model="newCondition.description" label="Descrição" placeholder="Descreva a condição clínica"
               rows="3" auto-grow />
           </VCol>
+
+          <VCol cols="12">
+            <VBtn variant="tonal" color="secondary" class="me-4" @click="conditionDialog = false">
+              Cancelar
+            </VBtn>
+
+            <VBtn variant="tonal" color="success" @click="addNewCondition">
+              Criar
+            </VBtn>
+          </VCol>
         </VRow>
       </VCardText>
-
-      <VDivider />
-
-      <VCardActions class="pa-6 justify-end">
-        <VBtn variant="outlined" color="secondary" @click="conditionDialog = false">
-          Cancelar
-        </VBtn>
-
-        <VBtn color="primary" @click="addNewCondition">
-          Adicionar
-        </VBtn>
-      </VCardActions>
     </VCard>
   </VDialog>
 
   <VDialog v-model="medicineDialog" max-width="600">
-    <VCard>
-      <VCardTitle class="pa-6">
-        Novo medicamento
-      </VCardTitle>
-
-      <VDivider />
-
-      <VCardText class="pa-6">
+    <VCard title="Criar novo medicamento">
+      <VCardText>
         <VRow>
           <VCol cols="12" md="6">
             <VTextField v-model="newMedicine.name" label="Nome" placeholder="Ex.: Losartana" />
@@ -177,32 +165,29 @@
             <VTextarea v-model="newMedicine.description" label="Descrição" placeholder="Descrição do medicamento"
               rows="3" auto-grow />
           </VCol>
+
+          <VCol cols="12">
+            <VBtn variant="tonal" color="secondary" class="me-4" @click="medicineDialog = false">
+              Cancelar
+            </VBtn>
+
+            <VBtn variant="tonal" color="success" @click="addNewMedicine">
+              Criar
+            </VBtn>
+          </VCol>
         </VRow>
       </VCardText>
-
-      <VDivider />
-
-      <VCardActions class="pa-6 justify-end">
-        <VBtn variant="outlined" color="secondary" @click="medicineDialog = false">
-          Cancelar
-        </VBtn>
-
-        <VBtn color="primary" @click="addNewMedicine">
-          Adicionar
-        </VBtn>
-      </VCardActions>
     </VCard>
   </VDialog>
 </template>
 
 <script setup>
-import { clinicalConditionsApi } from '@/api/clinical-conditions-api'
 import { employeesApi } from '@/api/employees-api'
 import { medicinePatientClinicalConditionsApi } from '@/api/medicine-patient-clinical-conditions-api'
 import { medicinesApi } from '@/api/medicines-api'
 import { patientClinicalConditionsApi } from '@/api/patient-clinical-conditions-api'
 import { patientsApi } from '@/api/patients-api'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue3-toastify'
 
@@ -239,38 +224,29 @@ const toDateTimeLocal = date => {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16)
 }
 
-const now = new Date()
-
-const model = reactive({
+const model = ref({
   patientId: null,
 
-  medicineId: null,
-  medicineName: '',
-  medicineDosage: '',
-  medicineDescription: '',
-  medicineAdministrationRoute: '',
+  medicineDTO: null,
 
-  patientClinicalConditionId: null,
-  clinicalConditionName: '',
-  clinicalConditionType: '',
-  clinicalConditionDescription: '',
+  patientClinicalConditionDTO: null,
 
+  responsibleEmployeeId: null,
   prescribedDosage: '',
   frequency: '',
   administrationTime: '',
-  responsibleEmployeeId: null,
-  startDate: toDateTimeLocal(now),
+  startDate: toDateTimeLocal(new Date()),
   endDate: '',
   observations: '',
 })
 
-const newCondition = reactive({
+const newCondition = ref({
   name: '',
   type: 'Clínica',
   description: '',
 })
 
-const newMedicine = reactive({
+const newMedicine = ref({
   name: '',
   dosage: '',
   description: '',
@@ -282,55 +258,62 @@ const requiredRules = [
 ]
 
 const endDateRules = [
-  value => !model.startDate || !value || new Date(value) >= new Date(model.startDate)
+  value => !model.value.startDate || !value || new Date(value) >= new Date(model.value.startDate)
     || 'A data final deve ser igual ou posterior à data inicial',
 ]
 
-const extractList = response => {
-  const data = response?.data
-  const nestedData = data?.data
+const getData = response => response.data.data ?? response.data
 
-  const list =
-    Array.isArray(data)
-      ? data
-      : Array.isArray(nestedData)
-        ? nestedData
-        : nestedData?.items
-        ?? nestedData?.patients
-        ?? nestedData?.patientClinicalConditions
-        ?? nestedData?.medicinePatientClinicalConditions
-        ?? nestedData?.medicines
-        ?? nestedData?.employees
-        ?? data?.$values
-        ?? []
+const getList = response => {
+  const data = getData(response)
 
-  if (Array.isArray(list))
-    return list
+  if (Array.isArray(data))
+    return data
 
-  return list?.$values ?? []
+  if (data)
+    return [data]
+
+  return []
 }
 
-const getEntityId = response => {
-  const data = response?.data?.data ?? response?.data
+const loadOptions = async () => {
+  loadingOptions.value = true
+  loadError.value = ''
 
-  return data?.id ?? data?.entityId ?? data
-}
+  try {
+    const patientsRet = await patientsApi.getAll()
+    const medicinesRet = await medicinesApi.getAll()
+    const employeesRet = await employeesApi.getAll()
 
-const getConditionTitle = item => {
-  return item.clinicalConditionName
-    ?? item.clinicalCondition?.name
-    ?? item.clinicalCondition?.description
-    ?? item.name
-    ?? item.description
-    ?? `Condição #${item.id}`
+    patientOptions.value = getList(patientsRet).map(item => ({
+      id: Number(item.id),
+      title: item.name ?? item.fullName ?? `Acolhido #${item.id}`,
+    }))
+
+    medicineOptions.value = getList(medicinesRet).map(item => ({
+      id: Number(item.id),
+      title: item.name ?? item.description ?? `Medicamento #${item.id}`,
+      name: item.name,
+      dosage: item.dosage,
+      description: item.description,
+      administrationRoute: item.administrationRoute,
+    }))
+
+    employeeOptions.value = getList(employeesRet).map(item => ({
+      id: Number(item.id),
+      title: item.name ?? item.fullName ?? `Responsável #${item.id}`,
+    }))
+  } catch (error) {
+    console.error(error)
+    loadError.value = 'Não foi possível carregar todas as opções. Tente atualizar a página.'
+  } finally {
+    loadingOptions.value = false
+  }
 }
 
 const onPatientSelected = async patientId => {
-  model.patientId = patientId
-  model.patientClinicalConditionId = null
-  model.clinicalConditionName = ''
-  model.clinicalConditionType = ''
-  model.clinicalConditionDescription = ''
+  model.value.patientId = patientId
+  model.value.patientClinicalConditionDTO = null
 
   await loadPatientConditions(patientId)
 }
@@ -344,158 +327,110 @@ const loadPatientConditions = async patientId => {
   loadingConditions.value = true
 
   try {
-    const ret = await patientClinicalConditionsApi.filter({
-      page: 1,
-      patientId: Number(patientId),
-    })
+    const ret = await patientClinicalConditionsApi.getByPatientId(patientId)
 
-    const conditions = extractList(ret)
-
-    patientConditionOptions.value = conditions.map(item => ({
+    patientConditionOptions.value = getList(ret).map(item => ({
       id: Number(item.id),
-      title: getConditionTitle(item),
-      raw: item,
+      clinicalConditionId: Number(item.clinicalConditionId),
+      title: item.clinicalCondition ?? `Condição #${item.id}`,
+      name: item.clinicalCondition,
+      type: '',
+      description: item.observations,
     }))
 
     if (!patientConditionOptions.value.length) {
       toast.warning('Esse acolhido ainda não possui condição clínica cadastrada. Você pode criar uma nova no botão +.')
     }
   } catch (error) {
-    console.error('Erro ao carregar condições clínicas:', error)
-
-    toast.error(
-      error.response?.data?.errorMessage ??
-      error.response?.data?.message ??
-      'Não foi possível carregar as condições clínicas do acolhido.'
-    )
+    console.error(error)
+    toast.error('Não foi possível carregar as condições clínicas do acolhido.')
   } finally {
     loadingConditions.value = false
   }
 }
 
-const loadOptions = async () => {
-  loadingOptions.value = true
-  loadError.value = ''
+const onMedicineSelected = selected => {
+  model.value.medicineDTO = selected
 
-  const requests = await Promise.allSettled([
-    patientsApi.getAll(),
-    medicinesApi.getAll(),
-    employeesApi.getAll(),
-  ])
-
-  const [patientsResult, medicinesResult, employeesResult] = requests
-
-  if (patientsResult.status === 'fulfilled') {
-    patientOptions.value = extractList(patientsResult.value).map(item => ({
-      id: Number(item.id),
-      title: item.name ?? item.fullName ?? `Acolhido #${item.id}`,
-    }))
+  if (selected?.dosage && !model.value.prescribedDosage) {
+    model.value.prescribedDosage = selected.dosage
   }
-
-  if (medicinesResult.status === 'fulfilled') {
-    medicineOptions.value = extractList(medicinesResult.value).map(item => ({
-      id: Number(item.id),
-      title: item.name ?? item.description ?? `Medicamento #${item.id}`,
-      raw: item,
-    }))
-  }
-
-  if (employeesResult.status === 'fulfilled') {
-    employeeOptions.value = extractList(employeesResult.value).map(item => ({
-      id: Number(item.id),
-      title: item.name ?? item.fullName ?? `Responsável #${item.id}`,
-    }))
-  }
-
-  if (requests.some(result => result.status === 'rejected')) {
-    loadError.value = 'Não foi possível carregar todas as opções. Tente atualizar a página.'
-  }
-
-  loadingOptions.value = false
 }
 
 const addNewCondition = () => {
-  if (!model.patientId) {
+  if (!model.value.patientId) {
     toast.warning('Selecione um acolhido antes de adicionar uma condição clínica.')
     return
   }
 
-  if (!newCondition.name?.trim()) {
+  if (!newCondition.value.name?.trim()) {
     toast.warning('Informe o nome da condição clínica.')
     return
   }
 
-  const newItem = {
+  const condition = {
     id: 0,
-    title: `${newCondition.name.trim()} (nova)`,
-    name: newCondition.name.trim(),
-    type: newCondition.type?.trim() || 'Clínica',
-    description: newCondition.description?.trim() || newCondition.name.trim(),
+    clinicalConditionId: 0,
+    title: `${newCondition.value.name.trim()} (nova)`,
+    name: newCondition.value.name.trim(),
+    type: newCondition.value.type?.trim() || 'Clínica',
+    description: newCondition.value.description?.trim() || newCondition.value.name.trim(),
   }
 
-  patientConditionOptions.value = patientConditionOptions.value.filter(item => Number(item.id) !== 0)
-  patientConditionOptions.value.push(newItem)
+  patientConditionOptions.value.push(condition)
 
-  model.patientClinicalConditionId = 0
-  model.clinicalConditionName = newItem.name
-  model.clinicalConditionType = newItem.type
-  model.clinicalConditionDescription = newItem.description
+  model.value.patientClinicalConditionDTO = condition
 
   conditionDialog.value = false
 
-  newCondition.name = ''
-  newCondition.type = 'Clínica'
-  newCondition.description = ''
-
-  toast.success('Condição adicionada. Ela será salva ao finalizar o cadastro.')
+  newCondition.value = {
+    name: '',
+    type: 'Clínica',
+    description: '',
+  }
 }
 
 const addNewMedicine = () => {
-  if (!newMedicine.name?.trim()) {
+  if (!newMedicine.value.name?.trim()) {
     toast.warning('Informe o nome do medicamento.')
     return
   }
 
-  if (!newMedicine.dosage?.trim()) {
+  if (!newMedicine.value.dosage?.trim()) {
     toast.warning('Informe a dosagem do medicamento.')
     return
   }
 
-  if (!newMedicine.administrationRoute) {
+  if (!newMedicine.value.administrationRoute) {
     toast.warning('Informe a via de administração.')
     return
   }
 
-  const newItem = {
+  const medicine = {
     id: 0,
-    title: `${newMedicine.name.trim()} - ${newMedicine.dosage.trim()} (novo)`,
-    name: newMedicine.name.trim(),
-    dosage: newMedicine.dosage.trim(),
-    description: newMedicine.description?.trim() || newMedicine.name.trim(),
-    administrationRoute: newMedicine.administrationRoute,
+    title: `${newMedicine.value.name.trim()} - ${newMedicine.value.dosage.trim()} (novo)`,
+    name: newMedicine.value.name.trim(),
+    dosage: newMedicine.value.dosage.trim(),
+    description: newMedicine.value.description?.trim() || newMedicine.value.name.trim(),
+    administrationRoute: newMedicine.value.administrationRoute,
   }
 
-  medicineOptions.value = medicineOptions.value.filter(item => Number(item.id) !== 0)
-  medicineOptions.value.push(newItem)
+  medicineOptions.value.push(medicine)
 
-  model.medicineId = 0
-  model.medicineName = newItem.name
-  model.medicineDosage = newItem.dosage
-  model.medicineDescription = newItem.description
-  model.medicineAdministrationRoute = newItem.administrationRoute
+  model.value.medicineDTO = medicine
 
-  if (!model.prescribedDosage) {
-    model.prescribedDosage = newItem.dosage
+  if (!model.value.prescribedDosage) {
+    model.value.prescribedDosage = medicine.dosage
   }
 
   medicineDialog.value = false
 
-  newMedicine.name = ''
-  newMedicine.dosage = ''
-  newMedicine.description = ''
-  newMedicine.administrationRoute = 'Oral'
-
-  toast.success('Medicamento adicionado. Ele será salvo ao finalizar o cadastro.')
+  newMedicine.value = {
+    name: '',
+    dosage: '',
+    description: '',
+    administrationRoute: 'Oral',
+  }
 }
 
 const submit = async () => {
@@ -507,86 +442,75 @@ const submit = async () => {
   saving.value = true
 
   try {
-    let medicineId = model.medicineId
-    let patientClinicalConditionId = model.patientClinicalConditionId
+    const administrationTime = model.value.administrationTime.length === 5
+      ? `${model.value.administrationTime}:00`
+      : model.value.administrationTime
 
-    if (Number(model.medicineId) === 0) {
-      const medicineResponse = await medicinesApi.create({
-        name: model.medicineName,
-        dosage: model.medicineDosage,
-        description: model.medicineDescription,
-        administrationRoute: model.medicineAdministrationRoute,
-      })
+    const selectedCondition = model.value.patientClinicalConditionDTO
 
-      medicineId = getEntityId(medicineResponse)
-
-      if (!medicineId)
-        throw new Error('Não foi possível criar o medicamento.')
+    const clinicalConditionDTO = {
+      id: Number(selectedCondition.clinicalConditionId),
+      name: selectedCondition.name,
+      type: selectedCondition.type,
+      description: selectedCondition.description,
     }
-
-    if (Number(model.patientClinicalConditionId) === 0) {
-      const conditionResponse = await clinicalConditionsApi.create({
-        name: model.clinicalConditionName,
-        type: model.clinicalConditionType || 'Clínica',
-        description: model.clinicalConditionDescription || model.clinicalConditionName,
-      })
-
-      const clinicalConditionId = getEntityId(conditionResponse)
-
-      if (!clinicalConditionId)
-        throw new Error('Não foi possível criar a condição clínica.')
-
-    const patientConditionResponse = await patientClinicalConditionsApi.create({
-      entity: {
-        patientId: Number(model.patientId),
-        clinicalConditionId: Number(clinicalConditionId),
-        diagnosisDate: new Date().toISOString(),
-        observations: 'Condição criada durante o cadastro do medicamento programado.',
-      },
-    })
-
-      patientClinicalConditionId = getEntityId(patientConditionResponse)
-
-      if (!patientClinicalConditionId)
-        throw new Error('Não foi possível vincular a condição clínica ao acolhido.')
-    }
-
-    const administrationTime = model.administrationTime.length === 5
-      ? `${model.administrationTime}:00`
-      : model.administrationTime
 
     const payload = {
-      medicineId: Number(medicineId),
-      patientClinicalConditionId: Number(patientClinicalConditionId),
-      prescribedDosage: model.prescribedDosage.trim(),
-      frequency: model.frequency.trim(),
+      patientId: Number(model.value.patientId),
+
+      medicineDTO: {
+        id: Number(model.value.medicineDTO.id),
+        name: model.value.medicineDTO.name,
+        dosage: model.value.medicineDTO.dosage,
+        description: model.value.medicineDTO.description,
+        administrationRoute: model.value.medicineDTO.administrationRoute,
+      },
+
+      clinicalConditionDTO: {
+        id: Number(selectedCondition.clinicalConditionId),
+        name: selectedCondition.name,
+        description: selectedCondition.description,
+        type: selectedCondition.type,
+      },
+
+      patientClinicalConditionDTO: {
+        id: Number(selectedCondition.id),
+        clinicalCondition: selectedCondition.name,
+        patientId: Number(model.value.patientId),
+        clinicalConditionId: Number(selectedCondition.clinicalConditionId),
+        diagnosisDate: new Date().toISOString(),
+        observations: selectedCondition.description || '',
+      },
+
+      responsibleEmployeeId: Number(model.value.responsibleEmployeeId),
+      prescribedDosage: model.value.prescribedDosage.trim(),
+      frequency: model.value.frequency.trim(),
       administrationTime,
-      responsibleEmployeeId: Number(model.responsibleEmployeeId),
-      startDate: new Date(model.startDate).toISOString(),
-      endDate: model.endDate ? new Date(model.endDate).toISOString() : null,
-      observations: model.observations.trim(),
+      startDate: new Date(model.value.startDate).toISOString(),
+      endDate: model.value.endDate ? new Date(model.value.endDate).toISOString() : null,
+      observations: model.value.observations?.trim() || '',
     }
 
     await medicinePatientClinicalConditionsApi.create(payload)
 
     toast.success('Medicamento programado cadastrado com sucesso.')
 
-    await router.push({
-      name: 'patient-reminders',
-    })
+    await router.push({ name: 'patient-reminders' })
   } catch (error) {
     console.error('Erro ao cadastrar medicamento programado:', error)
 
     toast.error(
-      error.response?.data?.errorMessage ??
-      error.response?.data?.message ??
-      error.message ??
-      'Não foi possível cadastrar o medicamento programado.'
+      error.response?.data?.errorMessage
+      ?? error.response?.data?.message
+      ?? error.message
+      ?? 'Não foi possível cadastrar o medicamento programado.'
     )
   } finally {
     saving.value = false
   }
 }
 
-onMounted(loadOptions)
+onMounted(() => {
+  loadOptions()
+})
 </script>

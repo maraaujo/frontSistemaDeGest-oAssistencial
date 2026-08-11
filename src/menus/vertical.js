@@ -10,5 +10,10 @@ export default [
     icon: 'mdi-pill',
     to: { name: 'patient-medicines' },  
   },
+    {
+    name: 'Patients',
+    icon: 'mdi-account-multiple-outline',
+    to: { name: 'patients' },
+  },
 
 ]

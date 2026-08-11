@@ -30,20 +30,22 @@ async logIn(email, password) {
   try {
     const ret = await loginAccountsApi.login({ email, password });
 
-    console.log("RETORNO LOGIN API:", ret.data);
+    const responseBody = ret?.data;
 
-    if (!ret?.data?.success) {
+    // A API pode retornar { success, data: {...} } ou os dados diretamente.
+    if (!responseBody || responseBody.success === false) {
       return {
         isOk: false,
         isAuthorized: false,
         data: null,
-        message: ret?.data?.errorMessage || "Falha ao autenticar usuário."
+        message: responseBody?.errorMessage || responseBody?.message || "Falha ao autenticar usuário."
       };
     }
 
-    const loginData = ret.data.data;
+    const loginData = responseBody.data ?? responseBody;
+    const token = loginData?.token ?? loginData?.accessToken;
 
-    if (!loginData?.token) {
+    if (!token) {
       return {
         isOk: false,
         isAuthorized: false,
@@ -55,16 +57,15 @@ async logIn(email, password) {
     this._user = {
       ...defaultUser,
       email: loginData.email,
-      token: loginData.token,
+      token,
       userId: loginData.userId,
       userType: loginData.userType,
+      institutionId: loginData.institutionId,
       name: loginData.email,
-      menus: [],
-      idsPerfil: [],
-      avatarUrl: null,
+      menus: loginData.menus || [],
+      idsPerfil: loginData.idsProfile || loginData.idsPerfil || [],
+      avatarUrl: loginData.avatar || loginData.avatarUrl || null,
     };
-
-    console.log("USUARIO SALVO:", this._user);
 
     this.saveUserStorage(this._user);
 

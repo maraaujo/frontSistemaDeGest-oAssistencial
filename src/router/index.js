@@ -55,6 +55,29 @@ const router = createRouter({
     layout: 'content',
   },
 },
+{
+  path: '/patients',
+  name: 'patients',
+  component: () => import('@/views/Patients/index.vue'),
+  meta: { requiresAuth: true,  layout: 'content', },
+  
+},
+{
+  path: '/patients-new',
+  name: 'patients-new',
+  component: () => import('@/views/Patients/Create.vue'),
+  meta: { requiresAuth: true,  layout: 'content', },
+  
+},
+{
+  path: '/patients/details/:id',
+  name: 'patient-details',
+  component: () => import('@/views/Patients/details.vue'),
+  meta: { requiresAuth: true ,
+      layout: 'content',
+  },
+  
+},
     {
       path: '/blank',
       name: 'blank',

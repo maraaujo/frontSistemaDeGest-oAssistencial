@@ -1,19 +1,23 @@
 export default [
   { heading: 'Menus' },
   {
-    name: 'Home',
+    name: 'Inicio',
     icon: 'mdi-account-injury',
     to: { name: 'patient-reminders' },
   },
   {
-    name: 'Patient Medicines',
+    name: 'Agendamento',
     icon: 'mdi-pill',
     to: { name: 'patient-medicines' },  
   },
-    {
-    name: 'Patients',
+  {
+    name: 'Paciente',
     icon: 'mdi-account-multiple-outline',
     to: { name: 'patients' },
   },
-
+  {
+    name: 'Medicamentos',
+    icon: 'mdi-pill',
+    to: { name: 'medicamentos' },
+  },
 ]

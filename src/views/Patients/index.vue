@@ -4,7 +4,10 @@
       <VCard>
         <VCardTitle class="d-flex align-center justify-space-between pa-6">
           <div class="d-flex align-center gap-3">
-            <VAvatar color="primary" variant="tonal">
+            <VAvatar
+              color="primary"
+              variant="tonal"
+            >
               <VIcon icon="mdi-account-heart" />
             </VAvatar>
 
@@ -33,7 +36,10 @@
         <VCardText class="pa-6">
           <VForm @submit.prevent="submit">
             <VRow>
-              <VCol cols="12" md="3">
+              <VCol
+                cols="12"
+                md="3"
+              >
                 <VTextField
                   v-model="filterModel.name"
                   label="Nome"
@@ -41,7 +47,10 @@
                 />
               </VCol>
 
-              <VCol cols="12" md="3">
+              <VCol
+                cols="12"
+                md="3"
+              >
                 <VTextField
                   v-model="filterModel.cpf"
                   label="CPF"
@@ -49,15 +58,24 @@
                 />
               </VCol>
 
-              <VCol cols="12" md="3">
-                <VTextField
-                  v-model="filterModel.phone"
-                  label="Telefone"
+              <VCol
+                cols="12"
+                md="3"
+              >
+                <VSelect
+                  v-model="filterModel.clinicalCondition"
+                  label="Condição Clinica"
+                  :items="conditions"
+                  item-title="name"
+                  item-value="id"
                   clearable
                 />
               </VCol>
 
-              <VCol cols="12" md="3">
+              <VCol
+                cols="12"
+                md="3"
+              >
                 <VSelect
                   v-model="filterModel.gender"
                   label="Sexo"
@@ -196,13 +214,14 @@
 </template>
 
 <script setup>
-import { patientsApi } from '@/api/patients-api'
-import { onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
-import { toast } from 'vue3-toastify'
+import { clinicalConditionsApi } from '@/api/clinical-conditions-api';
+import { patientsApi } from '@/api/patients-api';
+import { onMounted, ref } from 'vue';
+import { RouterLink, useRouter } from 'vue-router';
+import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 
 const router = useRouter()
-
+const conditions = ref([])
 const loading = ref(false)
 const patients = ref([])
 
@@ -212,6 +231,7 @@ const filterModel = ref({
   cpf: '',
   phone: '',
   gender: '',
+  clinicalCondition: '',
 })
 
 const paginationData = ref({
@@ -238,13 +258,34 @@ const headers = [
 
 const getResponseData = response => response?.data?.data ?? response?.data
 
+const getAllConditions = async () => {
+  try {
+    const ret = await clinicalConditionsApi.getAll()
+    const data = getResponseData(ret)
+
+    conditions.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('Erro ao buscar condições clínicas:', error)
+    toast.error('Não foi possível buscar as condições clínicas.')
+    
+    return []
+  }
+}
+
 const getPatients = async () => {
   loading.value = true
 
   try {
     filterModel.value.page = paginationData.value.page
 
-    const ret = await patientsApi.filter(filterModel.value)
+    const filter = {
+      ...filterModel.value,
+      clinicalCondition: filterModel.value.clinicalCondition == null
+        ? ''
+        : String(filterModel.value.clinicalCondition),
+    }
+
+    const ret = await patientsApi.filter(filter)
     const data = getResponseData(ret)
 
     patients.value =
@@ -278,6 +319,7 @@ const cleanFilters = async () => {
     cpf: '',
     phone: '',
     gender: '',
+    clinicalCondition: '',
   }
 
   paginationData.value.page = 1
@@ -294,7 +336,7 @@ const openDetails = item => {
 
 const openEdit = item => {
   router.push({
-    name: 'patients-edit',
+    name: 'patient-update',
     params: { id: item.id },
   })
 }
@@ -316,6 +358,7 @@ const formatDate = value => {
 }
 
 onMounted(() => {
-  getPatients()
+  getPatients(),
+  getAllConditions()
 })
 </script>

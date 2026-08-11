@@ -139,11 +139,11 @@
 </template>
 
 <script setup>
-import { bloodTypesApi } from '@/api/blood-types-api'
-import { patientsApi } from '@/api/patients-api'
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { toast } from 'vue3-toastify'
+import { bloodTypesApi } from '@/api/blood-types-api';
+import { patientsApi } from '@/api/patients-api';
+import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 const router = useRouter()
 const formRef = ref()
 const saving = ref(false)
@@ -239,7 +239,7 @@ const submit = async () => {
     saving.value = false
   }
 }
-onMounteed(( ) => {
+onMounted(( ) => {
   getBlodTypes()
 })
 

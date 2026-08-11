@@ -117,9 +117,9 @@
 </template>
 
 <script setup>
-import { patientsApi } from "@/api/patients-api"
-import { computed, onBeforeUnmount, onMounted, ref } from "vue"
-import { toast } from "vue3-toastify"
+import { patientsApi } from "@/api/patients-api";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 
 const loading = ref(false)
 const lastUpdated = ref("")

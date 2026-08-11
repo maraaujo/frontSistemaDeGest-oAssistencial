@@ -78,14 +78,22 @@ const router = createRouter({
   },
   
 },
+{
+  path: '/patients/update/:id',
+  name: 'patient-update',
+  component: () => import('@/views/Patients/update.vue'),
+  meta: { requiresAuth: true ,
+      layout: 'content',
+  },
+  
+},
     {
-      path: '/blank',
-      name: 'blank',
-      component: () => import('@/views/Blank.vue'),
-      meta: {
-        layout: 'blank',
-      },
-    },
+  path: '/medicamentos',
+  name: 'medicamentos',
+  component: () => import('@/views/Medicine/index.vue'),
+  meta: { requiresAuth: true,  layout: 'content', },
+  
+},
     {
       path: '/login',
       name: 'login',

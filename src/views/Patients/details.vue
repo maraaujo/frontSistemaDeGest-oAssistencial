@@ -40,7 +40,7 @@
               <VBtn
                 color="primary"
                 prepend-icon="mdi-pencil"
-                @click="router.push({ name: 'patients-edit', params: { id: patient.id } })"
+                @click="router.push({ name: 'patient-update', params: { id: patient.id } })"
               >
                 Editar
               </VBtn>
@@ -162,13 +162,6 @@
                     readonly
                   />
                 </VCol>
-                <VCol cols="12" md="4">
-                  <VTextField
-                    label="Telefone"
-                    :model-value="patient.phone"
-                    readonly
-                  />
-                </VCol>
 
                 <VCol cols="12" md="4">
                   <VTextField
@@ -225,7 +218,7 @@
 
             <VWindowItem value="health">
               <VRow>
-                <VCol cols="12" md="6">
+                <VCol cols="12" md="12">
                   <VCard variant="outlined">
                     <VCardTitle>
                       Condições clínicas
@@ -244,20 +237,7 @@
                   </VCard>
                 </VCol>
 
-                <VCol cols="12" md="6">
-                  <VCard variant="outlined">
-                    <VCardTitle>
-                      Doenças
-                    </VCardTitle>
-
-                    <VDataTable
-                      :headers="illnessHeaders"
-                      :items="illnesses"
-                      :loading="loading"
-                      hide-default-footer
-                    />
-                  </VCard>
-                </VCol>
+               
               </VRow>
             </VWindowItem>
 
@@ -325,10 +305,10 @@
 </template>
 
 <script setup>
-import { patientsApi } from '@/api/patients-api'
-import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { toast } from 'vue3-toastify'
+import { patientsApi } from '@/api/patients-api';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 
 const route = useRoute()
 const router = useRouter()

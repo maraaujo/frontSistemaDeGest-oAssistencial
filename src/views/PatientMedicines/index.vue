@@ -128,7 +128,7 @@ import { medicinesApi } from "@/api/medicines-api"
 import 'cleave.js/dist/addons/cleave-phone.br'
 import { onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
-import { toast } from "vue3-toastify"
+import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 import { VForm } from 'vuetify/components/VForm'
 const headers = [
   { title: "Id", key: "id", sortable: true },

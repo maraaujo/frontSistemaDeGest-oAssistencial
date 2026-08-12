@@ -6,13 +6,18 @@ export default [
   },
   {
     name: 'Agendamento',
-    icon: 'mdi-pill',
+    icon: 'mdi-clock-outline',
     to: { name: 'patient-medicines' },
   },
   {
     name: 'Pacientes',
     icon: 'mdi-account-multiple-outline',
     to: { name: 'patients' },
+  },
+  {
+    name: 'Funcionários',
+    icon: 'mdi-account-tie',
+    to: { name: 'employees' },
   },
   {
     name: 'Medicamentos',
@@ -23,5 +28,10 @@ export default [
     name: 'Condições clínicas',
     icon: 'mdi-medical-bag',
     to: { name: 'condicoes-clinicas' },
+  },
+    {
+    name: 'Funcionários',
+    icon: 'mdi-account-tie',
+    to: { name: 'employees' },
   },
 ]

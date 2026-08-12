@@ -101,6 +101,30 @@ const router = createRouter({
   meta: { requiresAuth: true,  layout: 'content', },
 
 },
+{
+  path: '/employees',
+  name: 'employees',
+  component: () => import('@/views/Employees/index.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
+{
+  path: '/employees-new',
+  name: 'employees-new',
+  component: () => import('@/views/Employees/create.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
+{
+  path: '/employees/details/:id',
+  name: 'employees-details',
+  component: () => import('@/views/Employees/details.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
+{
+  path: '/employees/update/:id',
+  name: 'employees-update',
+  component: () => import('@/views/Employees/update.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
     {
       path: '/login',
       name: 'login',

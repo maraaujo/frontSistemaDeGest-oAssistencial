@@ -92,7 +92,14 @@ const router = createRouter({
   name: 'medicamentos',
   component: () => import('@/views/Medicine/index.vue'),
   meta: { requiresAuth: true,  layout: 'content', },
-  
+
+},
+{
+  path: '/condicoes-clinicas',
+  name: 'condicoes-clinicas',
+  component: () => import('@/views/ClinicalConditions/index.vue'),
+  meta: { requiresAuth: true,  layout: 'content', },
+
 },
     {
       path: '/login',

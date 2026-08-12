@@ -180,6 +180,7 @@ import { patientsApi } from '@/api/patients-api'
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
+import { toast } from 'vue3-toastify'
 
 const router = useRouter()
 const route = useRoute()

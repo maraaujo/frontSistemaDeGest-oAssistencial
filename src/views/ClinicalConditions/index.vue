@@ -8,15 +8,15 @@
               color="primary"
               variant="tonal"
             >
-              <VIcon icon="mdi-pill" />
+              <VIcon icon="mdi-medical-bag" />
             </VAvatar>
 
             <div>
               <div class="text-h5 font-weight-bold">
-                Medicamentos
+                Condições clínicas
               </div>
               <div class="text-body-2 text-medium-emphasis">
-                Consulte e mantenha os medicamentos disponíveis no sistema.
+                Consulte e mantenha as condições clínicas disponíveis no sistema.
               </div>
             </div>
           </div>
@@ -26,7 +26,7 @@
             prepend-icon="mdi-plus"
             @click="openCreate"
           >
-            Novo medicamento
+            Nova condição clínica
           </VBtn>
         </VCardTitle>
 
@@ -35,9 +35,9 @@
         <VCardText class="pa-6">
           <VTextField
             v-model="search"
-            label="Pesquisar medicamento"
+            label="Pesquisar condição clínica"
             prepend-inner-icon="mdi-magnify"
-            placeholder="Nome, dosagem ou via de administração"
+            placeholder="Nome, tipo ou descrição"
             clearable
             hide-details
           />
@@ -47,10 +47,10 @@
 
         <VDataTable
           :headers="headers"
-          :items="filteredMedicines"
+          :items="filteredClinicalConditions"
           :loading="loading"
-          loading-text="Carregando medicamentos..."
-          no-data-text="Nenhum medicamento encontrado."
+          loading-text="Carregando condições clínicas..."
+          no-data-text="Nenhuma condição clínica encontrada."
           class="text-no-wrap"
         >
           <template #[`item.id`]="{ item }">
@@ -113,7 +113,7 @@
   >
     <VCard>
       <VCardTitle class="d-flex align-center justify-space-between pa-6">
-        <span>{{ editing ? 'Editar medicamento' : 'Novo medicamento' }}</span>
+        <span>{{ editing ? 'Editar condição clínica' : 'Nova condição clínica' }}</span>
         <VBtn
           icon="mdi-close"
           variant="text"
@@ -145,17 +145,9 @@
               md="4"
             >
               <VTextField
-                v-model="model.dosage"
-                label="Dosagem"
-                placeholder="Ex.: 50 mg"
-                :rules="requiredRules"
-              />
-            </VCol>
-            <VCol cols="12">
-              <VSelect
-                v-model="model.administrationRoute"
-                label="Via de administração"
-                :items="administrationRoutes"
+                v-model="model.type"
+                label="Tipo"
+                placeholder="Ex.: Clínica, Psiquiátrica"
                 :rules="requiredRules"
               />
             </VCol>
@@ -201,10 +193,10 @@
   >
     <VCard>
       <VCardTitle class="pa-6">
-        Excluir medicamento
+        Excluir condição clínica
       </VCardTitle>
       <VCardText>
-        Deseja excluir <strong>{{ selectedMedicine?.name }}</strong>? Essa ação não poderá ser desfeita.
+        Deseja excluir <strong>{{ selectedClinicalCondition?.name }}</strong>? Essa ação não poderá ser desfeita.
       </VCardText>
       <VCardActions class="pa-6 justify-end">
         <VBtn
@@ -218,7 +210,7 @@
         <VBtn
           color="error"
           :loading="deleting"
-          @click="removeMedicine"
+          @click="removeClinicalCondition"
         >
           Excluir
         </VBtn>
@@ -228,7 +220,7 @@
 </template>
 
 <script setup>
-import { medicinesApi } from '@/api/medicines-api';
+import { clinicalConditionsApi } from '@/api/clinical-conditions-api';
 import { computed, onMounted, ref } from 'vue';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 import { toast } from 'vue3-toastify';
@@ -237,30 +229,27 @@ const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
-const medicines = ref([])
+const clinicalConditions = ref([])
 const formDialog = ref(false)
 const deleteDialog = ref(false)
-const selectedMedicine = ref(null)
+const selectedClinicalCondition = ref(null)
 const formRef = ref()
 
 const headers = [
   { title: 'ID', key: 'id', sortable: true },
   { title: 'Nome', key: 'name', sortable: true },
-  { title: 'Dosagem', key: 'dosage', sortable: true },
-  { title: 'Via de administração', key: 'administrationRoute', sortable: true },
+  { title: 'Tipo', key: 'type', sortable: true },
   { title: 'Descrição', key: 'description', sortable: false },
   { title: 'Ações', key: 'actions', sortable: false },
 ]
 
-const administrationRoutes = ['Oral', 'Sublingual', 'Intravenosa', 'Intramuscular', 'Subcutânea', 'Tópica', 'Inalatória', 'Retal']
 const requiredRules = [value => Boolean(String(value ?? '').trim()) || 'Campo obrigatório']
 
 const emptyModel = () => ({
   id: 0,
   name: '',
-  dosage: '',
   description: '',
-  administrationRoute: '',
+  type: '',
 })
 
 const model = ref(emptyModel())
@@ -269,24 +258,24 @@ const editing = computed(() => model.value.id > 0)
 const getData = response => response?.data?.data ?? response?.data ?? []
 const extractList = data => Array.isArray(data) ? data : data?.items ?? data?.data ?? data?.$values ?? []
 
-const filteredMedicines = computed(() => {
+const filteredClinicalConditions = computed(() => {
   const term = search.value?.trim().toLocaleLowerCase('pt-BR')
 
   if (!term)
-    return medicines.value
+    return clinicalConditions.value
 
-  return medicines.value.filter(item => [item.name, item.dosage, item.administrationRoute, item.description]
+  return clinicalConditions.value.filter(item => [item.name, item.type, item.description]
     .some(value => String(value ?? '').toLocaleLowerCase('pt-BR').includes(term)))
 })
 
-const loadMedicines = async () => {
+const loadClinicalConditions = async () => {
   loading.value = true
 
   try {
-    medicines.value = extractList(getData(await medicinesApi.getAll()))
+    clinicalConditions.value = extractList(getData(await clinicalConditionsApi.getAll()))
   } catch (error) {
-    console.error('Erro ao carregar medicamentos:', error)
-    toast.error('Não foi possível carregar os medicamentos.')
+    console.error('Erro ao carregar condições clínicas:', error)
+    toast.error('Não foi possível carregar as condições clínicas.')
   } finally {
     loading.value = false
   }
@@ -301,9 +290,8 @@ const openEdit = item => {
   model.value = {
     id: Number(item.id),
     name: item.name ?? '',
-    dosage: item.dosage ?? '',
     description: item.description ?? '',
-    administrationRoute: item.administrationRoute ?? '',
+    type: item.type ?? '',
   }
   formDialog.value = true
 }
@@ -328,54 +316,60 @@ const submit = async () => {
   saving.value = true
 
   try {
-    const payload = {
-      id: Number(model.value.id),
-      name: model.value.name.trim(),
-      dosage: model.value.dosage.trim(),
-      description: model.value.description?.trim() || '',
-      administrationRoute: model.value.administrationRoute,
+    if (editing.value) {
+      const payload = {
+        id: Number(model.value.id),
+        name: model.value.name.trim(),
+        description: model.value.description?.trim() || '',
+        type: model.value.type.trim(),
+      }
+
+      await clinicalConditionsApi.update(payload)
+    } else {
+      const payload = {
+        name: model.value.name.trim(),
+        description: model.value.description?.trim() || '',
+        type: model.value.type.trim(),
+      }
+
+      await clinicalConditionsApi.create(payload)
     }
 
-    if (editing.value)
-      await medicinesApi.update(model.value.id, payload)
-    else
-      await medicinesApi.create(payload)
-
-    toast.success(editing.value ? 'Medicamento atualizado com sucesso.' : 'Medicamento cadastrado com sucesso.')
+    toast.success(editing.value ? 'Condição clínica atualizada com sucesso.' : 'Condição clínica cadastrada com sucesso.')
     formDialog.value = false
-    await loadMedicines()
+    await loadClinicalConditions()
   } catch (error) {
-    console.error('Erro ao salvar medicamento:', error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível salvar o medicamento.')
+    console.error('Erro ao salvar condição clínica:', error)
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível salvar a condição clínica.')
   } finally {
     saving.value = false
   }
 }
 
 const openDelete = item => {
-  selectedMedicine.value = item
+  selectedClinicalCondition.value = item
   deleteDialog.value = true
 }
 
-const removeMedicine = async () => {
-  if (!selectedMedicine.value?.id)
+const removeClinicalCondition = async () => {
+  if (!selectedClinicalCondition.value?.id)
     return
 
   deleting.value = true
 
   try {
-    await medicinesApi.remove(selectedMedicine.value.id)
-    toast.success('Medicamento excluído com sucesso.')
+    await clinicalConditionsApi.remove(selectedClinicalCondition.value.id)
+    toast.success('Condição clínica excluída com sucesso.')
     deleteDialog.value = false
-    selectedMedicine.value = null
-    await loadMedicines()
+    selectedClinicalCondition.value = null
+    await loadClinicalConditions()
   } catch (error) {
-    console.error('Erro ao excluir medicamento:', error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível excluir o medicamento.')
+    console.error('Erro ao excluir condição clínica:', error)
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível excluir a condição clínica.')
   } finally {
     deleting.value = false
   }
 }
 
-onMounted(loadMedicines)
+onMounted(loadClinicalConditions)
 </script>

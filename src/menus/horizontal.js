@@ -19,5 +19,9 @@ export default [
     icon: 'mdi-pill',
     to: { name: 'medicamentos' },
   },
-  
+  {
+    name: 'Condições clínicas',
+    icon: 'mdi-medical-bag',
+    to: { name: 'condicoes-clinicas' },
+  },
 ]

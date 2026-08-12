@@ -219,6 +219,7 @@ import { patientsApi } from '@/api/patients-api';
 import { onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
+import { toast } from 'vue3-toastify';
 
 const router = useRouter()
 const conditions = ref([])

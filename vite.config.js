@@ -1,6 +1,6 @@
 // Plugins
-import { URL, fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
+import { URL, fileURLToPath } from 'node:url'
 import AutoImport from 'unplugin-auto-import/vite'
 import VueDevTools from 'vite-plugin-vue-devtools'
 import vuetify from 'vite-plugin-vuetify'
@@ -13,10 +13,12 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [
     VueDevTools(),
+
     vue({
       template: {
         compilerOptions: {
-          isCustomElement: tag => tag === 'swiper-container' || tag === 'swiper-slide',
+          isCustomElement: tag =>
+            tag === 'swiper-container' || tag === 'swiper-slide',
         },
       },
     }),
@@ -28,6 +30,7 @@ export default defineConfig({
         configFile: 'src/styles/vuetify/_variables.scss',
       },
     }),
+
     AutoImport({
       imports: ['vue', 'vue-router'],
       vueTemplate: true,
@@ -36,9 +39,14 @@ export default defineConfig({
         filepath: './.eslintrc-auto-import.json',
       },
     }),
+
     svgLoader(),
   ],
-  define: { 'process.env': {} },
+
+  define: {
+    'process.env': {},
+  },
+
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -48,6 +56,7 @@ export default defineConfig({
       '@styles': fileURLToPath(new URL('./src/styles/', import.meta.url)),
       '@plugins': fileURLToPath(new URL('./src/plugins/', import.meta.url)),
     },
+
     extensions: [
       '.js',
       '.json',
@@ -58,12 +67,19 @@ export default defineConfig({
       '.vue',
     ],
   },
+
   server: {
     port: 5173,
+
+    watch: {
+      ignored: ['**/.vs/**'],
+    },
   },
+
   build: {
     chunkSizeWarningLimit: 5000,
   },
+
   optimizeDeps: {
     exclude: ['vuetify'],
     entries: [

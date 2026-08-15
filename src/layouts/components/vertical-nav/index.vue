@@ -1,14 +1,13 @@
 <script setup>
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
-import { useLocale } from 'vuetify'
 import Logo from '@/components/Logo.vue'
 import { useAppConfig } from '@/composable/useAppConfig'
 import { isGroupActive } from '@/layouts/components/utils'
 import VerticalNavGroup from '@/layouts/components/vertical-nav/VerticalNavGroup.vue'
 import VerticalNavLink from '@/layouts/components/vertical-nav/VerticalNavLink.vue'
 import verticalItems from '@/menus/vertical'
-import { appConfig } from '@appConfig'
+import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
+import { useLocale } from 'vuetify'
 
 const props = defineProps({
   isDrawerOpen: {
@@ -74,13 +73,7 @@ const handleScroll = () => {
           <!-- logo -->
           <Logo :size="52" />
 
-          <!-- title -->
-          <h6
-            class="app-title text-medium-emphasis font-weight-semibold"
-            :class="$vuetify.display.lgAndUp && isVerticalMenuMini ? 'rail-mode-is-on' : ''"
-          >
-            <span class="text-gradient">{{ appConfig.title.value }}</span>
-          </h6>
+        
         </RouterLink>
 
         <!-- toggle rail mode in medium and up screen -->

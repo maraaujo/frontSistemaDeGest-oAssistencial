@@ -129,9 +129,6 @@
             Agendamentos
           </VTab>
 
-          <VTab value="services">
-            Atendimentos
-          </VTab>
         </VTabs>
 
         <VDivider />
@@ -285,18 +282,6 @@
               </VDataTable>
             </VWindowItem>
 
-            <VWindowItem value="services">
-              <VDataTable
-                :headers="careServiceHeaders"
-                :items="careServices"
-                :loading="loading"
-                loading-text="Carregando..."
-              >
-                <template #[`item.date`]="{ item }">
-                  {{ formatDateTime(item.date || item.serviceDate) }}
-                </template>
-              </VDataTable>
-            </VWindowItem>
           </VWindow>
         </VCardText>
       </VCard>
@@ -324,7 +309,6 @@ const clinicalConditions = ref([])
 const illnesses = ref([])
 const medicines = ref([])
 const appointments = ref([])
-const careServices = ref([])
 const bloodType = ref({})
 
 const responsibleHeaders = [
@@ -363,13 +347,6 @@ const appointmentHeaders = [
 
 ]
 
-const careServiceHeaders = [
-  { title: 'Data', key: 'serviceDate' },
-  { title: 'Tipo', key: 'type' },
-  {title: 'Indicação', key:'referral'},
-  { title: 'Descrição', key: 'description' },
-]
-
 const getData = response => response?.data?.data ?? response?.data ?? {}
 
 const getArray = value => {
@@ -399,7 +376,6 @@ const loadPatient = async () => {
     appointments.value = getArray(data.appointments)
     illnesses.value = getArray(data.illnesses)
 
-    careServices.value = getArray(data.careService)
   } catch (error) {
     console.error('Erro ao carregar detalhes do acolhido:', error)
     toast.error('Não foi possível carregar os detalhes do acolhido.')

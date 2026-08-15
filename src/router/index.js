@@ -14,6 +14,24 @@ const router = createRouter({
       redirect: '/login',
     },
     {
+      path: '/home',
+      name: 'home',
+      component: () => import('@/views/Home/index.vue'),
+      meta: {
+        requiresAuth: true,
+        layout: 'content',
+      },
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('@/views/Dashboard/index.vue'),
+      meta: {
+        requiresAuth: true,
+        layout: 'content',
+      },
+    },
+    {
       path: '/patient-reminders',
       name: 'patient-reminders',
       component: () => import('@/views/PatientReminders/index.vue'),
@@ -29,14 +47,7 @@ const router = createRouter({
         layout: 'content',
       },
 },
-    {
-  path: '/patient-medicines-create',
-  name: 'patient-medicines-create',
-  component: () => import('@/views/PatientMedicines/create.vue'),
- meta: {
-        layout: 'content',
-      },
-},
+
 {
   path: '/patient-medicines/edit/:id',
   name: 'patient-medicines-edit',
@@ -102,6 +113,12 @@ const router = createRouter({
 
 },
 {
+  path: '/departamentos',
+  name: 'departamentos',
+  component: () => import('@/views/Departments/index.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
+{
   path: '/employees',
   name: 'employees',
   component: () => import('@/views/Employees/index.vue'),
@@ -123,6 +140,36 @@ const router = createRouter({
   path: '/employees/update/:id',
   name: 'employees-update',
   component: () => import('@/views/Employees/update.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
+{
+  path: '/administered-medicines-history',
+  name: 'administered-medicines-history',
+  component: () => import('@/views/MedicationAdministrations/history.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
+{
+  path: '/appointments',
+  name: 'appointments',
+  component: () => import('@/views/Appointments/index.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
+{
+  path: '/appointments/new',
+  name: 'appointments-new',
+  component: () => import('@/views/Appointments/create.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
+{
+  path: '/appointments/update/:id',
+  name: 'appointments-update',
+  component: () => import('@/views/Appointments/update.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
+{
+  path: '/internal-agent',
+  name: 'internal-agent',
+  component: () => import('@/views/InternalAgent/index.vue'),
   meta: { requiresAuth: true, layout: 'content', },
 },
     {

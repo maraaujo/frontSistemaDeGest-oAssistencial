@@ -2,7 +2,7 @@ import { config } from '@/composable/useConfig'
 
 // default settings
 export const appConfig = config({
-  title: ref('Gestão Assistencial'),
+  title: ref('SGA Assistencial'),
   theme: ref('system'),
   navigationMenu: ref('vertical'), // horizontal or vertical
   isBoxLayout: ref(true),

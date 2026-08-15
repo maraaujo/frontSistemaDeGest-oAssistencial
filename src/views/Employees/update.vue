@@ -154,8 +154,8 @@
 </template>
 
 <script setup>
-import { employeesApi } from '@/api/employees-api';
 import { departmentsApi } from '@/api/departments-api';
+import { employeesApi } from '@/api/employees-api';
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
@@ -229,10 +229,12 @@ const submit = async () => {
   saving.value = true
 
   try {
-    const payload = {
-      ...model.value,
    
+    const payload = {
+
+      ...model.value,
     }
+ 
     await employeesApi.update(model.value.id, payload)
     toast.success('Funcionário atualizado com sucesso!')
     router.push({ name: 'employees' })

@@ -172,6 +172,12 @@ const router = createRouter({
   component: () => import('@/views/InternalAgent/index.vue'),
   meta: { requiresAuth: true, layout: 'content', },
 },
+{
+  path: '/admin/overview',
+  name: 'admin-overview',
+  component: () => import('@/views/AdminOverview/index.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
     {
       path: '/login',
       name: 'login',

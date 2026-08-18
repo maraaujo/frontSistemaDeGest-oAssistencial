@@ -60,4 +60,10 @@ export default [
     icon: 'mdi-robot-outline',
     to: { name: 'internal-agent' },
   },
+  { heading: 'Administração' },
+  {
+    name: 'Painel Administrativo',
+    icon: 'mdi-view-dashboard-variant-outline',
+    to: { name: 'admin-overview' },
+  },
 ]

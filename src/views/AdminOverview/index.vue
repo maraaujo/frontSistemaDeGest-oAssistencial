@@ -1,5 +1,5 @@
 <script setup>
-import { adminOverviewApi } from '@/api/admin-overview-api'
+import { adminOverviewApi, formatRenewalText, SUBSCRIPTION_STATUS_META } from '@/api/admin-overview-api'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { toast } from 'vue3-toastify'
 import InstitutionsTable from './InstitutionsTable.vue'
@@ -58,16 +58,6 @@ const institutionsPagination = ref({ page: 1, totalPages: 1, count: 0, perPage: 
 
 // Planos reais carregados do backend (usados no filtro da tabela de instituições).
 const plans = ref([])
-
-const loadPlans = async () => {
-  try {
-    const response = await adminOverviewApi.getPlans()
-
-    plans.value = response.data ?? []
-  } catch (error) {
-    console.error('Erro ao carregar os planos:', error)
-  }
-}
 
 const anyLoading = computed(() =>
   kpisLoading.value
@@ -177,13 +167,15 @@ const secondaryCards = computed(() => [
   },
 ])
 
+const getData = response => response?.data?.data ?? response?.data
+
 const loadKpis = async () => {
   kpisLoading.value = true
   kpisError.value = ''
   try {
     const response = await adminOverviewApi.getKpis(period.value)
 
-    kpis.value = response.data
+    kpis.value = getData(response)
   } catch (error) {
     console.error('Erro ao carregar os indicadores do painel administrativo:', error)
     kpisError.value = 'Não foi possível carregar os indicadores.'
@@ -198,7 +190,7 @@ const loadRevenueTrend = async () => {
   try {
     const response = await adminOverviewApi.getRevenueTrend(period.value)
 
-    revenueTrend.value = response.data
+    revenueTrend.value = getData(response)
   } catch (error) {
     console.error('Erro ao carregar a evolução do faturamento:', error)
     revenueTrendError.value = 'Não foi possível carregar o gráfico de faturamento.'
@@ -213,7 +205,7 @@ const loadMovement = async () => {
   try {
     const response = await adminOverviewApi.getSubscriptionMovement(period.value)
 
-    movement.value = response.data
+    movement.value = getData(response)
   } catch (error) {
     console.error('Erro ao carregar o movimento de assinaturas:', error)
     movementError.value = 'Não foi possível carregar o gráfico de movimento.'
@@ -228,7 +220,7 @@ const loadByPlan = async () => {
   try {
     const response = await adminOverviewApi.getRevenueByPlan(period.value)
 
-    byPlan.value = response.data
+    byPlan.value = getData(response)
   } catch (error) {
     console.error('Erro ao carregar o faturamento por plano:', error)
     byPlanError.value = 'Não foi possível carregar o gráfico de planos.'
@@ -243,7 +235,7 @@ const loadStatus = async () => {
   try {
     const response = await adminOverviewApi.getSubscriptionStatus()
 
-    statusData.value = response.data
+    statusData.value = getData(response)
   } catch (error) {
     console.error('Erro ao carregar a situação das assinaturas:', error)
     statusError.value = 'Não foi possível carregar o gráfico de situação.'
@@ -262,9 +254,14 @@ const loadInstitutions = async (page = institutionsPagination.value.page) => {
       perPage: institutionsPagination.value.perPage,
     })
 
-    const data = response.data
+    const data = getData(response)
 
-    institutions.value = data.items
+    institutions.value = (data.items ?? []).map(item => ({
+      ...item,
+      statusMeta: SUBSCRIPTION_STATUS_META[item.status],
+      renewalText: formatRenewalText(item),
+    }))
+
     institutionsPagination.value = {
       page: data.page,
       totalPages: data.totalPages,
@@ -276,6 +273,16 @@ const loadInstitutions = async (page = institutionsPagination.value.page) => {
     institutionsError.value = 'Não foi possível carregar as instituições.'
   } finally {
     institutionsLoading.value = false
+  }
+}
+
+const loadPlans = async () => {
+  try {
+    const response = await adminOverviewApi.getPlans()
+
+    plans.value = getData(response) ?? []
+  } catch (error) {
+    console.error('Erro ao carregar os planos:', error)
   }
 }
 

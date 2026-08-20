@@ -8,6 +8,7 @@ import verticalItems from '@/menus/vertical'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
 import { useLocale } from 'vuetify'
+import auth from '@/auth'
 
 const props = defineProps({
   isDrawerOpen: {
@@ -22,11 +23,23 @@ const { t } = useLocale()
 const { isVerticalMenuMini, isSemiDark, skins } = useAppConfig()
 const OpenedGroup = ref([])
 
+const visibleVerticalItems = computed(() => {
+  const institutionId = auth.getUserStorage()?.institutionId
+
+  if (institutionId === null)
+    return verticalItems
+
+  return verticalItems.filter(item =>
+    item.heading !== 'Administração'
+    && item.to?.name !== 'admin-overview',
+  )
+})
+
 const resolveNavLinkGroup = computed(() => {
   return navItem => navItem.children ? VerticalNavGroup : VerticalNavLink
 })
 
-OpenedGroup.value = isGroupActive(verticalItems)
+OpenedGroup.value = isGroupActive(visibleVerticalItems.value)
 
 // remove group active when only link active
 const handleGroupClose = () => {
@@ -120,8 +133,8 @@ const handleScroll = () => {
           class="layout-vertical-nav-list text-high-emphasis"
         >
           <template
-            v-for="navItem in verticalItems"
-            :key="navItem.title"
+            v-for="navItem in visibleVerticalItems"
+            :key="navItem.name || navItem.heading"
           >
             <VListSubheader
               v-if="navItem.heading"

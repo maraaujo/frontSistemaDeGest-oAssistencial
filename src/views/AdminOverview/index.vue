@@ -1,5 +1,5 @@
 <script setup>
-import { PLANS, adminOverviewApi } from '@/api/admin-overview-api'
+import { adminOverviewApi } from '@/api/admin-overview-api'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { toast } from 'vue3-toastify'
 import InstitutionsTable from './InstitutionsTable.vue'
@@ -56,7 +56,18 @@ const institutionsError = ref('')
 const institutionsQuery = ref({ search: '', status: '', plan: '', sort: 'revenue_desc' })
 const institutionsPagination = ref({ page: 1, totalPages: 1, count: 0, perPage: 10 })
 
-const plans = PLANS
+// Planos reais carregados do backend (usados no filtro da tabela de instituições).
+const plans = ref([])
+
+const loadPlans = async () => {
+  try {
+    const response = await adminOverviewApi.getPlans()
+
+    plans.value = response.data ?? []
+  } catch (error) {
+    console.error('Erro ao carregar os planos:', error)
+  }
+}
 
 const anyLoading = computed(() =>
   kpisLoading.value
@@ -299,6 +310,7 @@ const exportOverview = () => {
 }
 
 onMounted(() => {
+  loadPlans()
   loadAll()
   clockTimer = setInterval(() => {
     now.value = Date.now()

@@ -181,18 +181,16 @@ const selectedPatientId = ref(null)
 
 const initialMessage = {
   role: 'assistant',
-  content: 'Olá! Sou o assistente interno do SGA Assistencial. Posso ajudar com consultas sobre pacientes, medicamentos, administrações e agendamentos.',
+  content: 'Olá! Sou o assistente interno do SGA Assistencial. Posso responder sobre medicamentos atrasados, medicamentos vinculados a um acolhido, administrações feitas hoje e o resumo do dia.',
 }
 
 const messages = ref([{ ...initialMessage }])
 
 const quickQuestions = ref([
   'Quais medicamentos estão atrasados hoje?',
-  'Quais pacientes têm agendamento hoje?',
-  'Quais medicamentos estão pendentes?',
-  'Quais administrações foram realizadas hoje?',
-  'Mostre os próximos agendamentos.',
-  'Resumo geral do dia.',
+  'Quais medicamentos estão vinculados a este paciente?',
+  'Quais administrações foram feitas hoje?',
+  'Resumo do dia.',
 ])
 
 const scrollToBottom = () => {
@@ -228,23 +226,6 @@ const loadPatients = async () => {
   }
 }
 
-// TODO: confirme o formato real da resposta do endpoint /InternalAssistant/Ask
-const extractAnswer = response => {
-  const payload = response?.data
-  const data = payload?.data
-
-  if (typeof data === 'string' && data.trim())
-    return data
-
-  if (typeof data?.answer === 'string' && data.answer.trim())
-    return data.answer
-
-  if (typeof payload?.message === 'string' && payload.message.trim())
-    return payload.message
-
-  return 'Não foi possível obter uma resposta no momento.'
-}
-
 const sendQuestion = async () => {
   const trimmedQuestion = question.value.trim()
 
@@ -259,14 +240,22 @@ const sendQuestion = async () => {
 
   try {
     const payload = {
-      patientId: selectedPatientId.value ?? 0,
+      patientId: selectedPatientId.value ?? null,
       question: trimmedQuestion,
       referenceDate: new Date().toISOString(),
     }
 
     const response = await internalAssistantApi.ask(payload)
+    const body = response?.data ?? {}
 
-    messages.value.push({ role: 'assistant', content: extractAnswer(response) })
+    if (body.success) {
+      messages.value.push({ role: 'assistant', content: body.data || 'Não foi possível obter uma resposta no momento.' })
+    } else {
+      const friendlyMessage = body.errorMessage || body.message || 'Não foi possível obter uma resposta no momento.'
+
+      messages.value.push({ role: 'assistant', content: friendlyMessage })
+      toast.error(friendlyMessage)
+    }
   } catch (error) {
     console.error('Erro ao consultar o assistente interno:', error)
 

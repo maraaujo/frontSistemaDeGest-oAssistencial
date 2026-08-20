@@ -178,6 +178,12 @@ const router = createRouter({
   component: () => import('@/views/AdminOverview/index.vue'),
   meta: { requiresAuth: true, layout: 'content', },
 },
+{
+  path: '/profile',
+  name: 'profile',
+  component: () => import('@/views/Profile/index.vue'),
+  meta: { requiresAuth: true, layout: 'content', },
+},
     {
       path: '/login',
       name: 'login',

@@ -178,14 +178,7 @@
                   @click="openDetails(item)"
                 >
                   <VListItemTitle>Detalhes</VListItemTitle>
-                </VListItem>
-
-                <VListItem
-                  link
-                  @click="openEdit(item)"
-                >
-                  <VListItemTitle>Editar</VListItemTitle>
-                </VListItem>
+              </VListItem>
 
                 <VListItem
                   link

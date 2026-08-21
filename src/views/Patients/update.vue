@@ -427,7 +427,7 @@
                           <VAutocomplete
                             v-model="selectedMedicineClinicalCondition"
                             label="Condição clínica relacionada"
-                            :items="model.clinicalConditions"
+                            :items="medicineClinicalConditionOptions"
                             item-title="clinicalConditionName"
                             item-value="clinicalConditionId"
                             no-data-text="Adicione uma condição clínica na etapa anterior"
@@ -590,10 +590,10 @@ import { employeesApi } from '@/api/employees-api'
 import { medicinesApi } from '@/api/medicines-api'
 import { patientClinicalConditionsApi } from '@/api/patient-clinical-conditions-api'
 import { patientsApi } from '@/api/patients-api'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { toast } from 'vue3-toastify'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
+import { toast } from 'vue3-toastify'
 
 const route = useRoute()
 const router = useRouter()
@@ -669,6 +669,12 @@ const conditionForm = ref({ diagnosisDate: '', observations: '' })
 const selectedMedicine = ref(null)
 const selectedMedicineClinicalCondition = ref(null)
 const selectedEmployee = ref(null)
+
+//losta cpmputada para o seletor de me3dicamentos
+const medicineClinicalConditionOptions = computed(() => model.value.clinicalConditions.map(condition => ({
+  ...condition,
+  clinicalConditionId: Number(condition.clinicalConditionId),
+})))
 
 const medicineForm = ref({
   prescribedDosage: '',
@@ -859,7 +865,7 @@ const addClinicalCondition = () => {
 
   const condition = {
     id: 0,
-    clinicalConditionId: selectedClinicalCondition.value.id,
+    clinicalConditionId: Number(selectedClinicalCondition.value.id),
     clinicalConditionName: selectedClinicalCondition.value.name,
     diagnosisDate: conditionForm.value.diagnosisDate,
     observations: conditionForm.value.observations,
@@ -935,8 +941,10 @@ const submit = async () => {
   saving.value = true
 
   try {
-    const payload = {
-      id: Number(model.value.id),
+    const patientId = Number(model.value.id)
+
+    const patient = {
+      id: patientId,
       name: model.value.name.trim(),
       birthDate: new Date(`${model.value.birthDate}T00:00:00`).toISOString(),
       phone: model.value.phone?.trim() || '',
@@ -945,9 +953,14 @@ const submit = async () => {
       cpf: model.value.cpf?.trim() || '',
       observations: model.value.observations?.trim() || '',
       bloodTypeId: Number(model.value.bloodTypeId),
+    }
+
+
+    const payload = {
+      patient,
       responsibles: model.value.responsibles.map(responsible => ({
         id: Number(responsible.id) || 0,
-        patientId: Number(model.value.id),
+        patientId,
         name: responsible.name.trim(),
         phone: responsible.phone.trim(),
         relationship: responsible.relationship.trim(),
@@ -955,16 +968,16 @@ const submit = async () => {
       })),
       clinicalConditions: model.value.clinicalConditions.map(condition => ({
         id: Number(condition.id) || 0,
-        patientId: Number(model.value.id),
-        clinicalConditionId: condition.clinicalConditionId,
+        patientId,
+        clinicalConditionId: Number(condition.clinicalConditionId),
         diagnosisDate: condition.diagnosisDate ? new Date(`${condition.diagnosisDate}T00:00:00`).toISOString() : null,
         observations: condition.observations,
       })),
       scheduledMedicines: model.value.scheduledMedicines.map(medicine => ({
         id: Number(medicine.id) || 0,
-        medicineId: medicine.medicineId,
+        medicineId: Number(medicine.medicineId),
         patientClinicalConditionId: 0,
-        clinicalConditionId: medicine.clinicalConditionId,
+        clinicalConditionId: Number(medicine.clinicalConditionId),
         prescribedDosage: medicine.prescribedDosage,
         frequency: medicine.frequency,
         administrationTime: medicine.administrationTime?.length === 5 ? `${medicine.administrationTime}:00` : medicine.administrationTime,

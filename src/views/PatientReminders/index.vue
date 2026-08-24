@@ -117,9 +117,10 @@
 </template>
 
 <script setup>
-import { patientsApi } from "@/api/patients-api";
+import { medicationAdministrationsApi } from "@/api/medication-administrations-api";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
+import { toast } from 'vue3-toastify';
 
 const loading = ref(false)
 const lastUpdated = ref("")
@@ -146,7 +147,7 @@ const sortedReminders = computed(() => [...listPatientReminders.value].sort((a, 
 const getPatientReminders = async () => {
   try {
     loading.value = true
-    const ret = await patientsApi.getMedicineReminders()
+    const ret = await medicationAdministrationsApi.getMedicineReminders()
 
     if (!ret?.data) {
       toast.error("Não foi possível buscar os lembretes.")
@@ -217,7 +218,7 @@ const getReminderText = minutesRemaining => {
 onMounted(() => {
   getPatientReminders()
   // Atualiza os lembretes a cada minuto
- // refreshInterval = window.setInterval(getPatientReminders, 60_000)
+ refreshInterval = window.setInterval(getPatientReminders, 60_000)
 })
 
 onBeforeUnmount(() => window.clearInterval(refreshInterval))

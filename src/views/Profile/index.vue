@@ -191,12 +191,19 @@ import { toast } from 'vue3-toastify'
 const formRef = ref()
 const loading = ref(true)
 const saving = ref(false)
+const accountLoaded = ref(false)
 const user = ref({})
 const institutionName = ref('')
 
 const model = ref({
+  id: 0,
+  userId: 0,
   name: '',
   email: '',
+  password: '',
+  userType: '',
+  lastLogin: null,
+  active: true,
 })
 
 const requiredRules = [
@@ -217,10 +224,30 @@ const initials = computed(() => {
 
 const resetForm = () => {
   model.value = {
+    ...model.value,
     name: user.value.name || '',
     email: user.value.email || '',
   }
   formRef.value?.resetValidation()
+}
+
+const loadLoginAccount = async userId => {
+  const response = await loginAccountsApi.getById(userId)
+  const account = response?.data?.data ?? response?.data
+
+  if (!account) throw new Error('Dados da conta não retornados pela API.')
+
+  model.value = {
+    id: account.id ?? userId,
+    userId: account.userId ?? userId,
+    name: account.name || user.value.name || '',
+    email: account.email || user.value.email || '',
+    password: account.password || '',
+    userType: account.userType || user.value.userType || '',
+    lastLogin: account.lastLogin ?? null,
+    active: account.active ?? true,
+  }
+  accountLoaded.value = true
 }
 
 const loadInstitution = async institutionId => {
@@ -236,6 +263,7 @@ const loadInstitution = async institutionId => {
 
 const loadProfile = async () => {
   loading.value = true
+  accountLoaded.value = false
   try {
     const result = await auth.getUser()
 
@@ -246,7 +274,14 @@ const loadProfile = async () => {
     }
 
     user.value = result.data
-    resetForm()
+
+    try {
+      await loadLoginAccount(result.data.userId)
+    } catch (error) {
+      console.error('Erro ao carregar a conta de login:', error)
+      toast.error('Não foi possível carregar os dados completos da conta.')
+      resetForm()
+    }
 
     if (result.data.institutionId) {
       await loadInstitution(result.data.institutionId)
@@ -257,6 +292,12 @@ const loadProfile = async () => {
 }
 
 const submit = async () => {
+  if (!accountLoaded.value) {
+    toast.error('Aguarde o carregamento completo da conta.')
+
+    return
+  }
+
   const { valid } = await formRef.value.validate()
 
   if (!valid) return
@@ -264,9 +305,14 @@ const submit = async () => {
   saving.value = true
 
   try {
-    await loginAccountsApi.update(user.value.userId, model.value)
+    await loginAccountsApi.update(user.value.userId, { ...model.value })
 
-    const updatedUser = { ...user.value, ...model.value }
+    const updatedUser = {
+      ...user.value,
+      name: model.value.name,
+      email: model.value.email,
+      userType: model.value.userType,
+    }
 
     auth._user = updatedUser
     auth.saveUserStorage(updatedUser)

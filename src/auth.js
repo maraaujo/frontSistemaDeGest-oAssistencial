@@ -1,6 +1,7 @@
 import { loginAccountsApi } from "@/api/login-accounts-api";
 
 const defaultUser = {
+  id: null,
   token: null,
   email: null,
   avatarUrl: null,
@@ -56,12 +57,17 @@ async logIn(email, password) {
 
     this._user = {
       ...defaultUser,
+      id: loginData.id
+        ?? loginData.loginAccountId
+        ?? loginData.idLoginAccount
+        ?? loginData.loginAccount?.id
+        ?? null,
       email: loginData.email,
       token,
       userId: loginData.userId,
       userType: loginData.userType,
       institutionId: loginData.institutionId,
-      name: loginData.email,
+      name: loginData.name,
       menus: loginData.menus || [],
       idsPerfil: loginData.idsProfile || loginData.idsPerfil || [],
       avatarUrl: loginData.avatar || loginData.avatarUrl || null,

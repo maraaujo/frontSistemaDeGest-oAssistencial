@@ -27,6 +27,7 @@ onMounted(() => {
   const result = auth.getUserStorage()
 
   user.value = result || {}
+  console.log(user.value)
 })
 </script>
 
@@ -45,7 +46,7 @@ onMounted(() => {
     <VMenu activator="parent">
       <VList>
         <VListItem :title="user.name || 'Usuário'">
-          <VListItemTitle>{{ user.name || 'Usuário' }}</VListItemTitle>
+
           <VListItemSubtitle>{{ user.email || '' }}</VListItemSubtitle>
         </VListItem>
         <VDivider class="mt-2" />

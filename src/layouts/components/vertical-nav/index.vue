@@ -24,14 +24,20 @@ const { isVerticalMenuMini, isSemiDark, skins } = useAppConfig()
 const OpenedGroup = ref([])
 
 const visibleVerticalItems = computed(() => {
-  const institutionId = auth.getUserStorage()?.institutionId
+  const currentUser = auth.getUserStorage()
+  const institutionId = currentUser?.institutionId
+  const userType = String(currentUser?.userType ?? '').trim().toLocaleLowerCase('pt-BR')
+  const isAdministrator = userType === 'administrador' || userType === 'admin'
 
   if (institutionId === null)
     return verticalItems
 
+  if (isAdministrator)
+    return verticalItems.filter(item => item.to?.name !== 'admin-overview')
+
   return verticalItems.filter(item =>
     item.heading !== 'Administração'
-    && item.to?.name !== 'admin-overview',
+    && !['admin-overview', 'admin-accounts'].includes(item.to?.name),
   )
 })
 

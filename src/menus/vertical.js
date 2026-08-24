@@ -66,4 +66,9 @@ export default [
     icon: 'mdi-view-dashboard-variant-outline',
     to: { name: 'admin-overview' },
   },
+  {
+    name: 'Contas de acesso',
+    icon: 'mdi-account-key-outline',
+    to: { name: 'admin-accounts' },
+  },
 ]

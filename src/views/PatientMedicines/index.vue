@@ -58,7 +58,7 @@
                   <div class="d-flex flex-wrap gap-4 justify-space-between">
                     <VBtn
                       color="primary"
-                      @click="router.push({ name: 'patient-medicines-create' })"
+                      @click="router.push({ name: 'patient-medicines-new' })"
                     >
                       Nova ministração programada
                     </VBtn>

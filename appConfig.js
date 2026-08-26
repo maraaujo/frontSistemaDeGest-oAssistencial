@@ -12,5 +12,5 @@ export const appConfig = config({
   isSemiDark: ref(false),
   skins: ref('modern'), // classic | modern | decent | bordered
   isNavbarFixed: ref(true),
-  routeTransition: ref('fade-transition'), // choose `none` to disable the route transition or  'slide-x-transition' | 'slide-x-reverse-transition' | 'fade-transition' | 'scroll-x-transition' | 'scroll-x-reverse-transition'
+  routeTransition: ref('none'), // choose `none` to disable the route transition or  'slide-x-transition' | 'slide-x-reverse-transition' | 'fade-transition' | 'scroll-x-transition' | 'scroll-x-reverse-transition'
 })

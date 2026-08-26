@@ -1,4 +1,4 @@
-<template>
+ <template>
   <VRow>
     <VCol cols="12">
       <VCard>
@@ -42,7 +42,7 @@
                 color="primary"
                 class="mt-2"
               >
-                {{ user.userType }}
+                {{  user.userType  }}
               </VChip>
             </div>
           </div>
@@ -231,47 +231,20 @@ const resetForm = () => {
   formRef.value?.resetValidation()
 }
 
-const resolveLoginAccountId = async currentUser => {
-  if (currentUser.id) return currentUser.id
-
-  const response = await loginAccountsApi.getAll()
-  const data = response?.data?.data ?? response?.data
-  const accounts = Array.isArray(data)
-    ? data
-    : data?.loginAccounts ?? data?.accounts ?? data?.items ?? data?.$values ?? []
-  const normalizedEmail = String(currentUser.email ?? '').trim().toLowerCase()
-  const account = accounts.find(item =>
-    (currentUser.userId && Number(item.userId) === Number(currentUser.userId))
-    || (normalizedEmail && String(item.email ?? '').trim().toLowerCase() === normalizedEmail),
-  )
-  const id = account?.id ?? account?.loginAccountId ?? account?.idLoginAccount
-
-  if (!id) throw new Error('Não foi possível identificar o id da conta de login.')
-
-  const updatedUser = { ...currentUser, id }
-  auth._user = updatedUser
-  auth.saveUserStorage(updatedUser)
-  user.value = updatedUser
-
-  return id
-}
-
-const loadLoginAccount = async id => {
-  if (!id) throw new Error('Id da conta de login não informado.')
-
-  const response = await loginAccountsApi.getById(id)
+const loadLoginAccount = async userId => {
+  const response = await loginAccountsApi.getById(userId)
   const account = response?.data?.data ?? response?.data
 
   if (!account) throw new Error('Dados da conta não retornados pela API.')
 
   model.value = {
-    id: account.id ?? id,
-    userId: account.userId ?? user.value.userId,
+    id: account.id ?? userId,
+    userId: account.userId ?? userId,
     name: account.name || user.value.name || '',
     email: account.email || user.value.email || '',
     password: account.password || '',
     userType: account.userType || user.value.userType || '',
-    lastLogin: account.lastLogin ?? Date.Now,
+    lastLogin: account.lastLogin ?? null,
     active: account.active ?? true,
   }
   accountLoaded.value = true
@@ -303,8 +276,7 @@ const loadProfile = async () => {
     user.value = result.data
 
     try {
-      const loginAccountId = await resolveLoginAccountId(result.data)
-      await loadLoginAccount(loginAccountId)
+      await loadLoginAccount(result.data.userId)
     } catch (error) {
       console.error('Erro ao carregar a conta de login:', error)
       toast.error('Não foi possível carregar os dados completos da conta.')
@@ -333,7 +305,7 @@ const submit = async () => {
   saving.value = true
 
   try {
-    await loginAccountsApi.update(model.value.id, { ...model.value })
+    await loginAccountsApi.update(user.value.userId, { ...model.value })
 
     const updatedUser = {
       ...user.value,

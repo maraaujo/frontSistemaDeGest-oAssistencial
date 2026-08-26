@@ -277,6 +277,19 @@ const getList = response => {
   return []
 }
 
+const dedupeById = items => {
+  const seen = new Set()
+
+  return items.filter(item => {
+    if (seen.has(item.id))
+      return false
+
+    seen.add(item.id)
+
+    return true
+  })
+}
+
 const loadOptions = async () => {
   loadingOptions.value = true
   loadError.value = ''
@@ -286,24 +299,24 @@ const loadOptions = async () => {
     const medicinesRet = await medicinesApi.getAll()
     const employeesRet = await employeesApi.getAll()
 
-    patientOptions.value = getList(patientsRet).map(item => ({
+    patientOptions.value = dedupeById(getList(patientsRet).map(item => ({
       id: Number(item.id),
       title: item.name ?? item.fullName ?? `Acolhido #${item.id}`,
-    }))
+    })))
 
-    medicineOptions.value = getList(medicinesRet).map(item => ({
+    medicineOptions.value = dedupeById(getList(medicinesRet).map(item => ({
       id: Number(item.id),
       title: item.name ?? item.description ?? `Medicamento #${item.id}`,
       name: item.name,
       dosage: item.dosage,
       description: item.description,
       administrationRoute: item.administrationRoute,
-    }))
+    })))
 
-    employeeOptions.value = getList(employeesRet).map(item => ({
+    employeeOptions.value = dedupeById(getList(employeesRet).map(item => ({
       id: Number(item.id),
       title: item.name ?? item.fullName ?? `Responsável #${item.id}`,
-    }))
+    })))
   } catch (error) {
     console.error(error)
     loadError.value = 'Não foi possível carregar todas as opções. Tente atualizar a página.'

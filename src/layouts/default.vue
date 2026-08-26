@@ -53,13 +53,8 @@ const isVerticalMenu = computed(() => {
       :fluid="!appConfig.isBoxLayout.value"
       class="layout-page-content-wrapper"
     >
-      <RouterView v-slot="{ Component }">
-        <Transition
-          :name="appConfig.routeTransition.value"
-          mode="out-in"
-        >
-          <Component :is="Component" />
-        </Transition>
+      <RouterView v-slot="{ Component, route }">
+        <Component :is="Component" :key="route.fullPath" />
       </RouterView>
     </VContainer>
     <Footer class="d-print-none" />

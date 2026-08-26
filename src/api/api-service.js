@@ -1,3 +1,4 @@
+import router from '@/router';
 import axios from 'axios';
 import { config } from './urls';
 
@@ -24,6 +25,18 @@ if (storedData) {
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && router.currentRoute.value.name !== 'login') {
+      sessionStorage.removeItem('tltkn');
+      router.push({ name: 'login' });
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 const getFullUrl = async (url) => {

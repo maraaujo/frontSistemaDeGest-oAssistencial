@@ -231,4 +231,25 @@ const router = createRouter({
   ],
 })
 
+// Após um novo deploy, uma aba já aberta pode tentar carregar um chunk JS antigo
+// (hash de build anterior) e falhar silenciosamente ao trocar de rota. Nesse caso,
+// força um reload completo para pegar o build atual em vez de deixar a tela em branco.
+router.onError((error, to) => {
+  const message = error?.message ?? ''
+  const isChunkLoadError = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(message)
+
+  if (isChunkLoadError) {
+    const alreadyReloaded = sessionStorage.getItem('chunk-reload-attempted')
+
+    if (!alreadyReloaded) {
+      sessionStorage.setItem('chunk-reload-attempted', '1')
+      window.location.href = to.fullPath
+    }
+  }
+})
+
+router.afterEach(() => {
+  sessionStorage.removeItem('chunk-reload-attempted')
+})
+
 export default router

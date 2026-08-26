@@ -429,7 +429,7 @@ const loadAppointments = async () => {
 
 const loadMedicineReminders = async () => {
   try {
-    const data = getResponseData(await patientsApi.getMedicineReminders())
+    const data = getResponseData(await medicationAdministrationsApi.getMedicineReminders())
     const list = extractList(data, ['patientReminders', 'medicineReminders', 'reminders'])
     const sorted = [...list].sort((a, b) => Number(a.minutesRemaining ?? Infinity) - Number(b.minutesRemaining ?? Infinity))
 

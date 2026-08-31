@@ -117,7 +117,7 @@
                 <VTextField
                   v-model="model.startDate"
                   label="Data inicial"
-                  type="datetime-local"
+                  type="date"
                   :rules="requiredRules"
                 />
               </VCol>
@@ -126,7 +126,7 @@
                 <VTextField
                   v-model="model.endDate"
                   label="Data final"
-                  type="datetime-local"
+                  type="date"
                   :rules="endDateRules"
                 />
               </VCol>
@@ -219,13 +219,13 @@ const endDateRules = [
     || 'A data final deve ser igual ou posterior à data inicial',
 ]
 
-const toDateTimeLocal = value => {
+const toDateOnly = value => {
   if (!value) return ''
 
   const date = value instanceof Date ? value : new Date(value)
   const offset = date.getTimezoneOffset() * 60_000
 
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10)
 }
 
 const toTimeInput = value => {
@@ -234,7 +234,10 @@ const toTimeInput = value => {
   if (typeof value === 'string')
     return value.slice(0, 5)
 
-  return toDateTimeLocal(value).slice(11, 16)
+  const date = new Date(value)
+  const offset = date.getTimezoneOffset() * 60_000
+
+  return new Date(date.getTime() - offset).toISOString().slice(11, 16)
 }
 
 const extractList = response => {
@@ -354,8 +357,8 @@ const loadMedicinePatientClinicalCondition = async () => {
   model.frequency = record.frequency ?? ''
   model.administrationTime = toTimeInput(record.administrationTime)
   model.responsibleEmployeeId = record.responsibleEmployeeId ? Number(record.responsibleEmployeeId) : null
-  model.startDate = record.startDate ? toDateTimeLocal(record.startDate) : ''
-  model.endDate = record.endDate ? toDateTimeLocal(record.endDate) : ''
+  model.startDate = record.startDate ? toDateOnly(record.startDate) : ''
+  model.endDate = record.endDate ? toDateOnly(record.endDate) : ''
   model.observations = record.observations ?? ''
 
   return record
@@ -408,8 +411,8 @@ const submit = async () => {
     frequency: model.frequency.trim(),
     administrationTime,
     responsibleEmployeeId: Number(model.responsibleEmployeeId),
-    startDate: new Date(model.startDate).toISOString(),
-    endDate: model.endDate ? new Date(model.endDate).toISOString() : null,
+    startDate: `${model.startDate}T${administrationTime}`,
+    endDate: model.endDate ? `${model.endDate}T23:59:59` : null,
     observations: model.observations.trim(),
   }
 

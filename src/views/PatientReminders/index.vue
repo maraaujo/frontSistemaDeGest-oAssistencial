@@ -70,9 +70,7 @@
               <div class="text-h6 font-weight-bold">
                 {{ item.patientName || 'Acolhido não informado' }}
               </div>
-              <span v-if="item.patientId" class="text-caption text-medium-emphasis">
-                ID: {{ item.patientId }}
-              </span>
+              
             </div>
           </template>
 

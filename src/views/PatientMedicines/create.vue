@@ -29,21 +29,15 @@
             <VRow>
               <VCol cols="12" md="4">
                 <VAutocomplete v-model="model.patientId" label="Acolhido" :items="patientOptions" item-title="title"
-                  item-value="id" :loading="loadingOptions" :rules="requiredRules" clearable
-                  @update:model-value="onPatientSelected" />
+                  item-value="id" :loading="loadingOptions" :rules="requiredRules" clearable />
               </VCol>
 
               <VCol cols="12" md="4">
-                <div class="d-flex gap-2">
-                  <VAutocomplete v-model="model.patientClinicalConditionDTO" label="Condição clínica"
-                    :items="patientConditionOptions" item-title="title" item-value="id" return-object
-                    :loading="loadingConditions" :disabled="!model.patientId" :rules="requiredRules" clearable
-                    class="flex-grow-1" placeholder="Selecione uma condição clínica"
-                    no-data-text="Nenhuma condição clínica encontrada para este acolhido" />
-
-                  <VBtn icon="mdi-plus" color="primary" variant="tonal" :disabled="!model.patientId"
-                    @click="conditionDialog = true" />
-                </div>
+                <VAutocomplete v-model="model.patientClinicalConditionDTO" label="Condição clínica"
+                  :items="clinicalConditionOptions" item-title="title" item-value="id" return-object
+                  :loading="loadingConditions" :rules="requiredRules" clearable
+                  placeholder="Selecione uma condição clínica"
+                  no-data-text="Nenhuma condição clínica cadastrada" />
               </VCol>
 
               <VCol cols="12" md="4">
@@ -79,12 +73,12 @@
               </VCol>
 
               <VCol cols="12" md="4">
-                <VTextField v-model="model.startDate" label="Data inicial" type="datetime-local"
+                <VTextField v-model="model.startDate" label="Data inicial" type="date"
                   :rules="requiredRules" />
               </VCol>
 
               <VCol cols="12" md="4">
-                <VTextField v-model="model.endDate" label="Data final" type="datetime-local" :rules="endDateRules"
+                <VTextField v-model="model.endDate" label="Data final" type="date" :rules="endDateRules"
                   clearable />
               </VCol>
 
@@ -112,37 +106,6 @@
       </VCard>
     </VCol>
   </VRow>
-
-  <VDialog v-model="conditionDialog" max-width="600">
-    <VCard title="Criar nova condição clínica">
-      <VCardText>
-        <VRow>
-          <VCol cols="12">
-            <VTextField v-model="newCondition.name" label="Nome da condição" placeholder="Ex.: Hipertensão" />
-          </VCol>
-
-          <VCol cols="12" md="6">
-            <VTextField v-model="newCondition.type" label="Tipo" placeholder="Ex.: Clínica" />
-          </VCol>
-
-          <VCol cols="12">
-            <VTextarea v-model="newCondition.description" label="Descrição" placeholder="Descreva a condição clínica"
-              rows="3" auto-grow />
-          </VCol>
-
-          <VCol cols="12">
-            <VBtn variant="tonal" color="secondary" class="me-4" @click="conditionDialog = false">
-              Cancelar
-            </VBtn>
-
-            <VBtn variant="tonal" color="success" @click="addNewCondition">
-              Criar
-            </VBtn>
-          </VCol>
-        </VRow>
-      </VCardText>
-    </VCard>
-  </VDialog>
 
   <VDialog v-model="medicineDialog" max-width="600">
     <VCard title="Criar novo medicamento">
@@ -182,10 +145,10 @@
 </template>
 
 <script setup>
+import { clinicalConditionsApi } from '@/api/clinical-conditions-api'
 import { employeesApi } from '@/api/employees-api'
 import { medicinePatientClinicalConditionsApi } from '@/api/medicine-patient-clinical-conditions-api'
 import { medicinesApi } from '@/api/medicines-api'
-import { patientClinicalConditionsApi } from '@/api/patient-clinical-conditions-api'
 import { patientsApi } from '@/api/patients-api'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -200,11 +163,10 @@ const loadingOptions = ref(false)
 const loadingConditions = ref(false)
 const loadError = ref('')
 
-const conditionDialog = ref(false)
 const medicineDialog = ref(false)
 
 const patientOptions = ref([])
-const patientConditionOptions = ref([])
+const clinicalConditionOptions = ref([])
 const medicineOptions = ref([])
 const employeeOptions = ref([])
 
@@ -219,10 +181,10 @@ const administrationRouteOptions = [
   'Nasal',
 ]
 
-const toDateTimeLocal = date => {
+const toDateOnly = date => {
   const offset = date.getTimezoneOffset() * 60_000
 
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10)
 }
 
 const model = ref({
@@ -236,15 +198,9 @@ const model = ref({
   prescribedDosage: '',
   frequency: '',
   administrationTime: '',
-  startDate: toDateTimeLocal(new Date()),
+  startDate: toDateOnly(new Date()),
   endDate: '',
   observations: '',
-})
-
-const newCondition = ref({
-  name: '',
-  type: 'Clínica',
-  description: '',
 })
 
 const newMedicine = ref({
@@ -325,39 +281,22 @@ const loadOptions = async () => {
   }
 }
 
-const onPatientSelected = async patientId => {
-  model.value.patientId = patientId
-  model.value.patientClinicalConditionDTO = null
-
-  await loadPatientConditions(patientId)
-}
-
-const loadPatientConditions = async patientId => {
-  patientConditionOptions.value = []
-
-  if (!patientId)
-    return
-
+const loadClinicalConditions = async () => {
   loadingConditions.value = true
 
   try {
-    const ret = await patientClinicalConditionsApi.getByPatientId(patientId)
+    const ret = await clinicalConditionsApi.getAll()
 
-    patientConditionOptions.value = getList(ret).map(item => ({
+    clinicalConditionOptions.value = dedupeById(getList(ret).map(item => ({
       id: Number(item.id),
-      clinicalConditionId: Number(item.clinicalConditionId),
-      title: item.clinicalCondition ?? `Condição #${item.id}`,
-      name: item.clinicalCondition,
-      type: '',
-      description: item.observations,
-    }))
-
-    if (!patientConditionOptions.value.length) {
-      toast.warning('Esse acolhido ainda não possui condição clínica cadastrada. Você pode criar uma nova no botão +.')
-    }
+      title: item.name ?? `Condição #${item.id}`,
+      name: item.name,
+      type: item.type,
+      description: item.description,
+    })))
   } catch (error) {
     console.error(error)
-    toast.error('Não foi possível carregar as condições clínicas do acolhido.')
+    toast.error('Não foi possível carregar as condições clínicas.')
   } finally {
     loadingConditions.value = false
   }
@@ -368,39 +307,6 @@ const onMedicineSelected = selected => {
 
   if (selected?.dosage && !model.value.prescribedDosage) {
     model.value.prescribedDosage = selected.dosage
-  }
-}
-
-const addNewCondition = () => {
-  if (!model.value.patientId) {
-    toast.warning('Selecione um acolhido antes de adicionar uma condição clínica.')
-    return
-  }
-
-  if (!newCondition.value.name?.trim()) {
-    toast.warning('Informe o nome da condição clínica.')
-    return
-  }
-
-  const condition = {
-    id: 0,
-    clinicalConditionId: 0,
-    title: `${newCondition.value.name.trim()} (nova)`,
-    name: newCondition.value.name.trim(),
-    type: newCondition.value.type?.trim() || 'Clínica',
-    description: newCondition.value.description?.trim() || newCondition.value.name.trim(),
-  }
-
-  patientConditionOptions.value.push(condition)
-
-  model.value.patientClinicalConditionDTO = condition
-
-  conditionDialog.value = false
-
-  newCondition.value = {
-    name: '',
-    type: 'Clínica',
-    description: '',
   }
 }
 
@@ -462,12 +368,8 @@ const submit = async () => {
 
     const selectedCondition = model.value.patientClinicalConditionDTO
 
-    const clinicalConditionDTO = {
-      id: Number(selectedCondition.clinicalConditionId),
-      name: selectedCondition.name,
-      type: selectedCondition.type,
-      description: selectedCondition.description,
-    }
+    const startDate = `${model.value.startDate}T${administrationTime}`
+    const endDate = model.value.endDate ? `${model.value.endDate}T23:59:59` : null
 
     const payload = {
       patientId: Number(model.value.patientId),
@@ -478,20 +380,22 @@ const submit = async () => {
         dosage: model.value.medicineDTO.dosage,
         description: model.value.medicineDTO.description,
         administrationRoute: model.value.medicineDTO.administrationRoute,
+        startDate,
+        endDate,
       },
 
       clinicalConditionDTO: {
-        id: Number(selectedCondition.clinicalConditionId),
+        id: Number(selectedCondition.id),
         name: selectedCondition.name,
         description: selectedCondition.description,
         type: selectedCondition.type,
       },
 
       patientClinicalConditionDTO: {
-        id: Number(selectedCondition.id),
+        id: 0,
         clinicalCondition: selectedCondition.name,
         patientId: Number(model.value.patientId),
-        clinicalConditionId: Number(selectedCondition.clinicalConditionId),
+        clinicalConditionId: Number(selectedCondition.id),
         diagnosisDate: new Date().toISOString(),
         observations: selectedCondition.description || '',
       },
@@ -500,8 +404,8 @@ const submit = async () => {
       prescribedDosage: model.value.prescribedDosage.trim(),
       frequency: model.value.frequency.trim(),
       administrationTime,
-      startDate: new Date(model.value.startDate).toISOString(),
-      endDate: model.value.endDate ? new Date(model.value.endDate).toISOString() : null,
+      startDate,
+      endDate,
       observations: model.value.observations?.trim() || '',
     }
 
@@ -526,5 +430,6 @@ const submit = async () => {
 
 onMounted(() => {
   loadOptions()
+  loadClinicalConditions()
 })
 </script>

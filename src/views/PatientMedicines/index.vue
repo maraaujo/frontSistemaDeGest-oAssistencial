@@ -99,9 +99,7 @@
                           {{ item.patientName || 'Acolhido não informado' }}
                         </h6>
 
-                        <span class="text-caption text-medium-emphasis">
-                          ID: {{ item.patientId || '-' }}
-                        </span>
+                      
                       </div>
                     </template>
                     <template #[`item.medicineName`]="{ item }">

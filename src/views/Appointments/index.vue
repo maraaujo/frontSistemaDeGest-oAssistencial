@@ -90,6 +90,7 @@
 
 <script setup>
 import { appointmentsApi } from '@/api/appointments-api';
+import { ensureSuccessfulResponse } from '@/utils/apiResponse';
 import { employeesApi } from '@/api/employees-api';
 import { patientsApi } from '@/api/patients-api';
 import { onMounted, ref } from 'vue';
@@ -147,14 +148,22 @@ const search = () => loadAppointments()
 const clearFilters = () => { filters.value = emptyFilters(); loadAppointments() }
 const editItem = item => router.push({ name: 'appointments-update', params: { id: item.id } })
 const cancelItem = async item => {
-  try { await appointmentsApi.update(item.id, { ...item, status: 'Cancelado' }); toast.success('Agendamento cancelado.'); await loadAppointments() }
-  catch (error) { console.error(error); toast.error('Não foi possível cancelar o agendamento.') }
+  try {
+    const response = await appointmentsApi.update(item.id, { ...item, status: 'Cancelado' })
+    ensureSuccessfulResponse(response, 'Não foi possível cancelar o agendamento.')
+    toast.success('Agendamento cancelado.'); await loadAppointments()
+  }
+  catch (error) { console.error(error); toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível cancelar o agendamento.') }
 }
 const confirmRemove = item => { selectedItem.value = item; deleteDialog.value = true }
 const removeItem = async () => {
   deleting.value = true
-  try { await appointmentsApi.remove(selectedItem.value.id); toast.success('Agendamento excluído.'); deleteDialog.value = false; await loadAppointments() }
-  catch (error) { console.error(error); toast.error('Não foi possível excluir o agendamento.') }
+  try {
+    const response = await appointmentsApi.remove(selectedItem.value.id)
+    ensureSuccessfulResponse(response, 'Não foi possível excluir o agendamento.')
+    toast.success('Agendamento excluído.'); deleteDialog.value = false; await loadAppointments()
+  }
+  catch (error) { console.error(error); toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível excluir o agendamento.') }
   finally { deleting.value = false }
 }
 const formatDateTime = value => value ? new Date(value).toLocaleString('pt-BR') : '-'

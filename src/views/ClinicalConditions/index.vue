@@ -221,6 +221,7 @@
 
 <script setup>
 import { clinicalConditionsApi } from '@/api/clinical-conditions-api';
+import { ensureSuccessfulResponse } from '@/utils/apiResponse';
 import { computed, onMounted, ref } from 'vue';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 import { toast } from 'vue3-toastify';
@@ -316,6 +317,8 @@ const submit = async () => {
   saving.value = true
 
   try {
+    let response
+
     if (editing.value) {
       const payload = {
         id: Number(model.value.id),
@@ -324,7 +327,7 @@ const submit = async () => {
         type: model.value.type.trim(),
       }
 
-      await clinicalConditionsApi.update(payload)
+      response = await clinicalConditionsApi.update(payload)
     } else {
       const payload = {
         name: model.value.name.trim(),
@@ -332,15 +335,17 @@ const submit = async () => {
         type: model.value.type.trim(),
       }
 
-      await clinicalConditionsApi.create(payload)
+      response = await clinicalConditionsApi.create(payload)
     }
+
+    ensureSuccessfulResponse(response, 'Não foi possível salvar a condição clínica.')
 
     toast.success(editing.value ? 'Condição clínica atualizada com sucesso.' : 'Condição clínica cadastrada com sucesso.')
     formDialog.value = false
     await loadClinicalConditions()
   } catch (error) {
     console.error('Erro ao salvar condição clínica:', error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível salvar a condição clínica.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível salvar a condição clínica.')
   } finally {
     saving.value = false
   }
@@ -358,14 +363,17 @@ const removeClinicalCondition = async () => {
   deleting.value = true
 
   try {
-    await clinicalConditionsApi.remove(selectedClinicalCondition.value.id)
+    const response = await clinicalConditionsApi.remove(selectedClinicalCondition.value.id)
+
+    ensureSuccessfulResponse(response, 'Não foi possível excluir a condição clínica.')
+
     toast.success('Condição clínica excluída com sucesso.')
     deleteDialog.value = false
     selectedClinicalCondition.value = null
     await loadClinicalConditions()
   } catch (error) {
     console.error('Erro ao excluir condição clínica:', error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível excluir a condição clínica.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível excluir a condição clínica.')
   } finally {
     deleting.value = false
   }

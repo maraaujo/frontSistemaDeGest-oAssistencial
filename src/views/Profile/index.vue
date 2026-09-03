@@ -185,6 +185,7 @@
 import { institutionsApi } from '@/api/institutions-api'
 import { loginAccountsApi } from '@/api/login-accounts-api'
 import auth from '@/auth'
+import { ensureSuccessfulResponse } from '@/utils/apiResponse'
 import { computed, onMounted, ref } from 'vue'
 import { toast } from 'vue3-toastify'
 
@@ -305,7 +306,9 @@ const submit = async () => {
   saving.value = true
 
   try {
-    await loginAccountsApi.update(user.value.userId, { ...model.value })
+    const response = await loginAccountsApi.update(user.value.userId, { ...model.value })
+
+    ensureSuccessfulResponse(response, 'Não foi possível atualizar o perfil.')
 
     const updatedUser = {
       ...user.value,
@@ -321,7 +324,7 @@ const submit = async () => {
     toast.success('Perfil atualizado com sucesso!')
   } catch (error) {
     console.error('Erro ao atualizar perfil:', error)
-    toast.error('Não foi possível atualizar o perfil.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível atualizar o perfil.')
   } finally {
     saving.value = false
   }

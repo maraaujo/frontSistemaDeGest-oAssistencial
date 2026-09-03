@@ -19,6 +19,7 @@ import { appointmentsApi } from '@/api/appointments-api';
 import { employeesApi } from '@/api/employees-api';
 import { patientsApi } from '@/api/patients-api';
 import auth from '@/auth';
+import { ensureSuccessfulResponse } from '@/utils/apiResponse';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
@@ -54,12 +55,13 @@ const submit = async () => {
   if (!userId) { toast.error('Não foi possível identificar o usuário autenticado.'); return }
   saving.value = true
   try {
-    await appointmentsApi.create({ ...model.value, userId, dateTime: new Date(model.value.dateTime).toISOString(), appointmentType: model.value.appointmentType.trim(), description: model.value.description.trim(), observations: model.value.observations.trim() })
+    const response = await appointmentsApi.create({ ...model.value, userId, dateTime: new Date(model.value.dateTime).toISOString(), appointmentType: model.value.appointmentType.trim(), description: model.value.description.trim(), observations: model.value.observations.trim() })
+    ensureSuccessfulResponse(response, 'Não foi possível cadastrar o agendamento.')
     toast.success('Agendamento cadastrado com sucesso!')
     router.push({ name: 'appointments' })
   } catch (error) {
     console.error('Erro ao criar agendamento:', error)
-    toast.error(error.response?.data?.message ?? 'Não foi possível cadastrar o agendamento.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível cadastrar o agendamento.')
   } finally { saving.value = false }
 }
 

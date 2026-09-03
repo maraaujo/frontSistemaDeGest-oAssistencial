@@ -177,6 +177,7 @@ import { medicinePatientClinicalConditionsApi } from '@/api/medicine-patient-cli
 import { medicinesApi } from '@/api/medicines-api'
 import { patientClinicalConditionsApi } from '@/api/patient-clinical-conditions-api'
 import { patientsApi } from '@/api/patients-api'
+import { ensureSuccessfulResponse } from '@/utils/apiResponse'
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
@@ -419,7 +420,9 @@ const submit = async () => {
   saving.value = true
 
   try {
-    await medicinePatientClinicalConditionsApi.update(payload)
+    const response = await medicinePatientClinicalConditionsApi.update(payload)
+
+    ensureSuccessfulResponse(response, 'Não foi possível atualizar a prescrição.')
 
     toast.success('Prescrição atualizada com sucesso.')
 
@@ -432,6 +435,7 @@ const submit = async () => {
     toast.error(
       error.response?.data?.errorMessage ??
       error.response?.data?.message ??
+      error.message ??
       'Não foi possível atualizar a prescrição.'
     )
   } finally {

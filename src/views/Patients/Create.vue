@@ -583,6 +583,7 @@ import { clinicalConditionsApi } from '@/api/clinical-conditions-api'
 import { employeesApi } from '@/api/employees-api'
 import { medicinesApi } from '@/api/medicines-api'
 import { patientsApi } from '@/api/patients-api'
+import { ensureSuccessfulResponse } from '@/utils/apiResponse'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
@@ -870,7 +871,9 @@ const submit = async () => {
       })),
     }
 
-    await patientsApi.create(payload)
+    const response = await patientsApi.create(payload)
+
+    ensureSuccessfulResponse(response, 'Não foi possível cadastrar o acolhido.')
 
     toast.success('Acolhido cadastrado com sucesso.')
     await router.push({ name: 'patients' })

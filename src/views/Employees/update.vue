@@ -156,6 +156,7 @@
 <script setup>
 import { departmentsApi } from '@/api/departments-api';
 import { employeesApi } from '@/api/employees-api';
+import { ensureSuccessfulResponse } from '@/utils/apiResponse';
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
@@ -235,12 +236,15 @@ const submit = async () => {
       ...model.value,
     }
  
-    await employeesApi.update(model.value.id, payload)
+    const response = await employeesApi.update(model.value.id, payload)
+
+    ensureSuccessfulResponse(response, 'Não foi possível atualizar o funcionário.')
+
     toast.success('Funcionário atualizado com sucesso!')
     router.push({ name: 'employees' })
   } catch (error) {
     console.error('Erro ao atualizar funcionário:', error)
-    toast.error('Não foi possível atualizar o funcionário.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível atualizar o funcionário.')
   } finally {
     saving.value = false
   }

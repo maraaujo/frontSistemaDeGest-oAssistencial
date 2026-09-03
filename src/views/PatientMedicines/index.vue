@@ -373,6 +373,7 @@ import { employeesApi } from "@/api/employees-api"
 import { medicationAdministrationsApi } from "@/api/medication-administrations-api"
 import { medicinePatientClinicalConditionsApi } from "@/api/medicine-patient-clinical-conditions-api"
 import { medicinesApi } from "@/api/medicines-api"
+import { ensureSuccessfulResponse } from '@/utils/apiResponse'
 import 'cleave.js/dist/addons/cleave-phone.br'
 import { onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
@@ -471,14 +472,17 @@ const deleteOffer = async id => {
 
   console.log("Deletando oferta com id:", deleteId)
   try {
-    await medicinePatientClinicalConditionsApi.remove(deleteId)
+    const response = await medicinePatientClinicalConditionsApi.remove(deleteId)
+
+    ensureSuccessfulResponse(response, 'Não foi possível remover a oferta.')
+
     await getMedicinePatientClinicalCondicions()
     toast.success("Oferta removida com sucesso.")
     showDeleteDialog.value = false
     offerToDelete.value = null
   } catch (error) {
     console.error("Erro ao apagar a oferta:", error)
-    toast.error("Não foi possível remover a oferta. Tente novamente mais tarde.")
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? "Não foi possível remover a oferta. Tente novamente mais tarde.")
   }
 
 }
@@ -614,14 +618,16 @@ const saveAdministration = async () => {
       observations: administrationForm.value.observations?.trim() || '',
     }
 
-    await medicationAdministrationsApi.create(payload)
+    const response = await medicationAdministrationsApi.create(payload)
+
+    ensureSuccessfulResponse(response, 'Não foi possível registrar a administração.')
 
     toast.success('Administração registrada com sucesso.')
     administrationDialog.value = false
     await getMedicinePatientClinicalCondicions()
   } catch (error) {
     console.error('Erro ao registrar administração:', error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível registrar a administração.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível registrar a administração.')
   } finally {
     savingAdministration.value = false
   }

@@ -229,6 +229,7 @@
 
 <script setup>
 import { medicinesApi } from '@/api/medicines-api';
+import { ensureSuccessfulResponse } from '@/utils/apiResponse';
 import { computed, onMounted, ref } from 'vue';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 import { toast } from 'vue3-toastify';
@@ -336,17 +337,18 @@ const submit = async () => {
       administrationRoute: model.value.administrationRoute,
     }
 
-    if (editing.value)
-      await medicinesApi.update(model.value.id, payload)
-    else
-      await medicinesApi.create(payload)
+    const response = editing.value
+      ? await medicinesApi.update(model.value.id, payload)
+      : await medicinesApi.create(payload)
+
+    ensureSuccessfulResponse(response, 'Não foi possível salvar o medicamento.')
 
     toast.success(editing.value ? 'Medicamento atualizado com sucesso.' : 'Medicamento cadastrado com sucesso.')
     formDialog.value = false
     await loadMedicines()
   } catch (error) {
     console.error('Erro ao salvar medicamento:', error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível salvar o medicamento.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível salvar o medicamento.')
   } finally {
     saving.value = false
   }
@@ -364,14 +366,17 @@ const removeMedicine = async () => {
   deleting.value = true
 
   try {
-    await medicinesApi.remove(selectedMedicine.value.id)
+    const response = await medicinesApi.remove(selectedMedicine.value.id)
+
+    ensureSuccessfulResponse(response, 'Não foi possível excluir o medicamento.')
+
     toast.success('Medicamento excluído com sucesso.')
     deleteDialog.value = false
     selectedMedicine.value = null
     await loadMedicines()
   } catch (error) {
     console.error('Erro ao excluir medicamento:', error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível excluir o medicamento.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível excluir o medicamento.')
   } finally {
     deleting.value = false
   }

@@ -207,6 +207,7 @@
 
 <script setup>
 import { departmentsApi } from '@/api/departments-api';
+import { ensureSuccessfulResponse } from '@/utils/apiResponse';
 import { computed, onMounted, ref } from 'vue';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 import { toast } from 'vue3-toastify';
@@ -304,17 +305,18 @@ const submit = async () => {
       description: model.value.description?.trim() || '',
     }
 
-    if (editing.value)
-      await departmentsApi.update({ id: Number(model.value.id), ...payload })
-    else
-      await departmentsApi.create(payload)
+    const response = editing.value
+      ? await departmentsApi.update({ id: Number(model.value.id), ...payload })
+      : await departmentsApi.create(payload)
+
+    ensureSuccessfulResponse(response, 'Não foi possível salvar o departamento.')
 
     toast.success(editing.value ? 'Departamento atualizado com sucesso.' : 'Departamento cadastrado com sucesso.')
     formDialog.value = false
     await loadDepartments()
   } catch (error) {
     console.error('Erro ao salvar departamento:', error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível salvar o departamento.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível salvar o departamento.')
   } finally {
     saving.value = false
   }
@@ -332,14 +334,17 @@ const removeDepartment = async () => {
   deleting.value = true
 
   try {
-    await departmentsApi.remove(selectedDepartment.value.id)
+    const response = await departmentsApi.remove(selectedDepartment.value.id)
+
+    ensureSuccessfulResponse(response, 'Não foi possível excluir o departamento.')
+
     toast.success('Departamento excluído com sucesso.')
     deleteDialog.value = false
     selectedDepartment.value = null
     await loadDepartments()
   } catch (error) {
     console.error('Erro ao excluir departamento:', error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? 'Não foi possível excluir o departamento.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível excluir o departamento.')
   } finally {
     deleting.value = false
   }

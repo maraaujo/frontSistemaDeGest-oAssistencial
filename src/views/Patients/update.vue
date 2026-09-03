@@ -590,6 +590,7 @@ import { employeesApi } from '@/api/employees-api'
 import { medicinesApi } from '@/api/medicines-api'
 import { patientClinicalConditionsApi } from '@/api/patient-clinical-conditions-api'
 import { patientsApi } from '@/api/patients-api'
+import { ensureSuccessfulResponse } from '@/utils/apiResponse'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
@@ -988,7 +989,9 @@ const submit = async () => {
       })),
     }
 
-    await patientsApi.update(model.value.id, payload)
+    const response = await patientsApi.update(model.value.id, payload)
+
+    ensureSuccessfulResponse(response, 'Não foi possível atualizar o acolhido.')
 
     toast.success('Acolhido atualizado com sucesso.')
     await router.push({ name: 'patient-details', params: { id: model.value.id } })

@@ -150,6 +150,7 @@ import { employeesApi } from '@/api/employees-api'
 import { medicinePatientClinicalConditionsApi } from '@/api/medicine-patient-clinical-conditions-api'
 import { medicinesApi } from '@/api/medicines-api'
 import { patientsApi } from '@/api/patients-api'
+import { ensureSuccessfulResponse } from '@/utils/apiResponse'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
@@ -409,7 +410,9 @@ const submit = async () => {
       observations: model.value.observations?.trim() || '',
     }
 
-    await medicinePatientClinicalConditionsApi.create(payload)
+    const response = await medicinePatientClinicalConditionsApi.create(payload)
+
+    ensureSuccessfulResponse(response, 'Não foi possível cadastrar o medicamento programado.')
 
     toast.success('Medicamento programado cadastrado com sucesso.')
 

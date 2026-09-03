@@ -18,6 +18,7 @@ import { appointmentsApi } from '@/api/appointments-api';
 import { employeesApi } from '@/api/employees-api';
 import { patientsApi } from '@/api/patients-api';
 import auth from '@/auth';
+import { ensureSuccessfulResponse } from '@/utils/apiResponse';
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
@@ -47,10 +48,11 @@ const submit = async () => {
   if (!userId) { toast.error('Não foi possível identificar o usuário autenticado.'); return }
   saving.value = true
   try {
-    await appointmentsApi.update(route.params.id, { ...model.value, userId, dateTime: new Date(model.value.dateTime).toISOString(), appointmentType: model.value.appointmentType.trim(), description: model.value.description.trim(), observations: model.value.observations.trim() })
+    const response = await appointmentsApi.update(route.params.id, { ...model.value, userId, dateTime: new Date(model.value.dateTime).toISOString(), appointmentType: model.value.appointmentType.trim(), description: model.value.description.trim(), observations: model.value.observations.trim() })
+    ensureSuccessfulResponse(response, 'Não foi possível atualizar o agendamento.')
     toast.success('Agendamento atualizado com sucesso!'); router.push({ name: 'appointments' })
   } catch (error) {
-    console.error('Erro ao atualizar agendamento:', error); toast.error(error.response?.data?.message ?? 'Não foi possível atualizar o agendamento.')
+    console.error('Erro ao atualizar agendamento:', error); toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível atualizar o agendamento.')
   } finally { saving.value = false }
 }
 

@@ -148,6 +148,7 @@
 
 <script setup>
 import { employeesApi } from '@/api/employees-api';
+import { ensureSuccessfulResponse } from '@/utils/apiResponse';
 import { departmentsApi } from '@/api/departments-api';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -199,12 +200,15 @@ const submit = async () => {
   saving.value = true
 
   try {
-    await employeesApi.create(model.value)
+    const response = await employeesApi.create(model.value)
+
+    ensureSuccessfulResponse(response, 'Não foi possível cadastrar o funcionário.')
+
     toast.success('Funcionário cadastrado com sucesso!')
     router.push({ name: 'employees' })
   } catch (error) {
     console.error('Erro ao criar funcionário:', error)
-    toast.error('Não foi possível cadastrar o funcionário.')
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível cadastrar o funcionário.')
   } finally {
     saving.value = false
   }

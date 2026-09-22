@@ -1,5 +1,6 @@
 import router from '@/router';
 import axios from 'axios';
+import { toast } from 'vue3-toastify';
 import { config } from './urls';
 
 const apiHost = config.apiHost;
@@ -32,7 +33,17 @@ axios.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && router.currentRoute.value.name !== 'login') {
       sessionStorage.removeItem('tltkn');
-      router.push({ name: 'login' });
+
+      // Avisa o usuário do motivo (sessão expirada) em vez de simplesmente
+      // devolvê-lo à tela de login sem explicação, e preserva a rota atual
+      // para retornar a ela após novo login.
+      toast.info('Sua sessão expirou. Faça login novamente para continuar.');
+
+      const current = router.currentRoute.value.fullPath;
+      router.push({
+        name: 'login',
+        query: current && current !== '/' ? { redirect: current } : {},
+      });
     }
 
     return Promise.reject(error);

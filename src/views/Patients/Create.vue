@@ -99,7 +99,18 @@
                       />
                     </VCol>
 
-           
+                    <VCol
+                      cols="12"
+                      md="4"
+                    >
+                      <VTextField
+                        v-model="model.phone"
+                        label="Telefone"
+                        placeholder="(00) 00000-0000"
+                        :rules="phoneRules()"
+                      />
+                    </VCol>
+
                     <VCol
                       cols="12"
                       md="4"
@@ -112,7 +123,6 @@
                       />
                     </VCol>
 
-                    
                     <VCol
                       cols="12"
                       md="4"
@@ -666,7 +676,21 @@ const getList = value => {
   return value ? [value] : []
 }
 
-const goNext = () => {
+const validateCurrentStep = async () => {
+  if (!formRef.value)
+    return false
+
+  const { valid } = await formRef.value.validate()
+
+  return valid
+}
+
+const goNext = async () => {
+  const isValid = await validateCurrentStep()
+
+  if (!isValid)
+    return
+
   if (currentStep.value < steps.length)
     currentStep.value += 1
 }
@@ -810,6 +834,7 @@ const submit = async () => {
 
   if (!validation?.valid) {
     currentStep.value = 1
+    toast.warning('Preencha todos os campos obrigatórios antes de salvar.')
 
     return
   }

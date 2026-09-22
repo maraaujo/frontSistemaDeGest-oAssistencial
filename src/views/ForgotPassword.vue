@@ -5,6 +5,7 @@ import Logo from '@/components/Logo.vue'
 import authBgDark from '@images/pages/auth-bg-dark.svg'
 import authBgLight from '@images/pages/auth-bg-light.svg'
 import authForgotPasswordImg from '@images/pages/girl-forgot-something.png'
+import { toast } from 'vue3-toastify'
 
 const forgetPasswordForm = ref()
 const theme = useTheme()
@@ -13,6 +14,16 @@ const email = ref('')
 const authBgThemeVariant = computed(() => {
   return theme.current.value.dark ? authBgDark : authBgLight
 })
+
+const submit = async () => {
+  const { valid } = await forgetPasswordForm.value.validate()
+  if (!valid)
+    return
+
+  // A redefinição automática de senha ainda não está disponível no sistema;
+  // orientamos o usuário a procurar o administrador em vez de simular um envio.
+  toast.info('Para redefinir sua senha, entre em contato com o administrador da instituição.')
+}
 </script>
 
 <template>
@@ -30,24 +41,28 @@ const authBgThemeVariant = computed(() => {
           <VCardText class="d-flex align-center gap-2 pt-0 pb-1 text-primary">
             <Logo :size="90" />
             <h4 class="text-h4 text-primary">
-              PrimeDash
+              SGA Assistencial
             </h4>
           </VCardText>
 
           <VCardItem>
-            <VCardTitle>Forgot Password?</VCardTitle>
+            <VCardTitle>Esqueceu a senha?</VCardTitle>
           </VCardItem>
 
           <VCardText>
-            <p>Enter your registered email address to change your mail account password.</p>
+            <p>Informe o e-mail cadastrado para receber as orientações de redefinição de senha.</p>
 
-            <VForm ref="forgetPasswordForm">
+            <VForm
+              ref="forgetPasswordForm"
+              @submit.prevent="submit"
+            >
               <VRow>
                 <VCol cols="12">
                   <VTextField
                     v-model="email"
-                    label="Email"
-                    :rules="[v => !!v || 'Email is required']"
+                    label="E-mail"
+                    type="email"
+                    :rules="[v => !!v || 'E-mail é obrigatório']"
                   />
                 </VCol>
 
@@ -58,7 +73,7 @@ const authBgThemeVariant = computed(() => {
                     color="primary"
                     class="mb-3"
                   >
-                    Send Reset Link
+                    Enviar instruções
                   </VBtn>
 
                   <VBtn
@@ -69,7 +84,7 @@ const authBgThemeVariant = computed(() => {
                     prepend-icon="mdi-chevron-double-left"
                     :to="{ name: 'login' }"
                   >
-                    Back to login
+                    Voltar para o login
                   </VBtn>
                 </VCol>
               </VRow>

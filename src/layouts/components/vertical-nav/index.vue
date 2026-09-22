@@ -25,15 +25,14 @@ const OpenedGroup = ref([])
 
 const visibleVerticalItems = computed(() => {
   const currentUser = auth.getUserStorage()
-  const institutionId = currentUser?.institutionId
-  const userType = String(currentUser?.userType ?? '').trim().toLocaleLowerCase('pt-BR')
-  const isAdministrator = userType === 'administrador' || userType === 'admin'
 
-  if (institutionId === null)
+  // A seção "Administração" é exclusiva do administrador da plataforma
+  // (conta sem instituição vinculada). Demais usuários não a enxergam.
+  const isPlatformAdmin = !!currentUser
+    && (currentUser.institutionId === null || currentUser.institutionId === undefined)
+
+  if (isPlatformAdmin)
     return verticalItems
-
-  if (isAdministrator)
-    return verticalItems.filter(item => item.to?.name !== 'admin-overview')
 
   return verticalItems.filter(item =>
     item.heading !== 'Administração'

@@ -12,17 +12,17 @@ import mics404 from '@images/pages/error-message-404.png'
       />
     </div>
     <h5 class="text-h5 font-weight-semibold mb-3">
-      Page not found.
+      Página não encontrada.
     </h5>
     <p>
-      The page you are trying to access doesn't exist. Please check if the URL is correct.
+      A página que você tentou acessar não existe. Verifique se o endereço está correto.
     </p>
     <VBtn
       to="/"
       variant="outlined"
       color="primary"
     >
-      Go to home page
+      Ir para a página inicial
     </VBtn>
   </div>
 </template>

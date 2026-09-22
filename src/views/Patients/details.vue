@@ -22,7 +22,7 @@
                 </div>
 
                 <div class="text-body-2 text-medium-emphasis">
-                  CPF: {{ patient.document || 'Não informado' }} 
+                  CPF: {{ patient.cpf ? formatCpf(patient.cpf) : 'Não informado' }}
                 </div>
               </div>
             </div>

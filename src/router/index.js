@@ -179,19 +179,19 @@ const router = createRouter({
   path: '/admin/overview',
   name: 'admin-overview',
   component: () => import('@/views/AdminOverview/index.vue'),
-  meta: { requiresAuth: true, layout: 'content', },
+  meta: { requiresAuth: true, superAdmin: true, layout: 'content', },
 },
 {
   path: '/admin/accounts',
   name: 'admin-accounts',
   component: () => import('@/views/AdminAccounts/index.vue'),
-  meta: { requiresAuth: true, layout: 'content', },
+  meta: { requiresAuth: true, superAdmin: true, layout: 'content', },
 },
 {
   path: '/admin/accounts/new',
   name: 'admin-account-new',
   component: () => import('@/views/AdminAccounts/Create.vue'),
-  meta: { requiresAuth: true, layout: 'content', },
+  meta: { requiresAuth: true, superAdmin: true, layout: 'content', },
 },
 {
   path: '/profile',
@@ -203,14 +203,6 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('@/views/Login.vue'),
-      meta: {
-        layout: 'blank',
-      },
-    },
-    {
-      path: '/register',
-      name: 'register',
-      component: () => import('@/views/Register.vue'),
       meta: {
         layout: 'blank',
       },
@@ -243,7 +235,17 @@ router.beforeEach(to => {
   if (to.meta?.requiresAuth && !isLoggedIn)
     return { name: 'login', query: { redirect: to.fullPath } }
 
-  if (isLoggedIn && (to.name === 'login' || to.name === 'register'))
+  // Rotas administrativas (superAdmin) são exclusivas do administrador da
+  // plataforma (sem instituição vinculada). Usuário de instituição é redirecionado.
+  if (to.meta?.superAdmin) {
+    const user = auth.getUserStorage()
+    const isPlatformAdmin = !!user && (user.institutionId === null || user.institutionId === undefined)
+
+    if (!isPlatformAdmin)
+      return { name: 'home' }
+  }
+
+  if (isLoggedIn && to.name === 'login')
     return { name: 'patient-reminders' }
 
   return true

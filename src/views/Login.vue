@@ -50,7 +50,7 @@
 
               <VTextField
                 v-model="loginData.password"
-                :type="isPasswordVisible ? 'password' : 'text'"
+                :type="isPasswordVisible ? 'text' : 'password'"
                 label="Senha"
                 :rules="[(v) => !!v || 'Senha obrigatória']"
                 :append-inner-icon="isPasswordVisible ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
@@ -95,24 +95,19 @@
 <script setup>
 import auth from "@/auth";
 import Logo from "@/components/Logo.vue";
-import authBgDark from "@images/pages/auth-bg-dark.svg";
-import authBgLight from "@images/pages/auth-bg-light.svg";
 
-import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
-import { useTheme } from "vuetify";
+import { ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { VForm } from "vuetify/components/VForm";
 
 const authorized = ref(true);
 const loginForm = ref();
 const router = useRouter();
+const route = useRoute();
 
 const valid = ref(true);
-const isPasswordVisible = ref(true);
-const loginInvalid = ref(false);
-const theme = useTheme();
+const isPasswordVisible = ref(false);
 const process = ref(false);
-const loading = ref(true);
 
 const emailRules = ref([
   (v) => !!v || "E-mail é obrigatório",
@@ -124,13 +119,7 @@ const loginData = ref({
   password: "",
 });
 
-const authBgThemeVariant = computed(() => {
-  return theme.current.value.dark ? authBgDark : authBgLight;
-});
-
 const submit = async () => {
-  loginInvalid.value = false;
-
   if (!valid.value) {
     return;
   }
@@ -143,22 +132,21 @@ const submit = async () => {
       loginData.value.password
     );
 
-    authorized.value = true;
-
     if (!result.isAuthorized) {
       authorized.value = false;
-      loginInvalid.value = true;
-      loading.value = false;
       return;
     }
 
-    router.push({
-      path: `/patient-reminders`,
-    });
+    authorized.value = true;
+
+    const redirect = typeof route.query.redirect === "string"
+      ? route.query.redirect
+      : "/patient-reminders";
+
+    router.push(redirect);
   } catch (error) {
     console.error(error);
     authorized.value = false;
-    loginInvalid.value = true;
   } finally {
     process.value = false;
   }

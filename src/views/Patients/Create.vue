@@ -99,16 +99,7 @@
                       />
                     </VCol>
 
-                    <VCol
-                      cols="12"
-                      md="4"
-                    >
-                      <VTextField
-                        v-model="model.phone"
-                        label="Telefone"
-                      />
-                    </VCol>
-
+           
                     <VCol
                       cols="12"
                       md="4"
@@ -116,19 +107,12 @@
                       <VTextField
                         v-model="model.cpf"
                         label="CPF"
+                        placeholder="000.000.000-00"
+                        :rules="cpfRules()"
                       />
                     </VCol>
 
-                    <VCol
-                      cols="12"
-                      md="4"
-                    >
-                      <VTextField
-                        v-model="model.document"
-                        label="Documento"
-                      />
-                    </VCol>
-
+                    
                     <VCol
                       cols="12"
                       md="4"
@@ -182,7 +166,7 @@
                         Responsáveis
                       </div>
                       <div class="text-body-2 text-medium-emphasis">
-                        Informe ao menos um responsável pelo acolhido.
+                        Informar um responsável pelo acolhido é opcional.
                       </div>
                     </div>
 
@@ -205,7 +189,6 @@
                     <VCardTitle class="d-flex align-center justify-space-between text-subtitle-1">
                       Responsável {{ index + 1 }}
                       <VBtn
-                        v-if="model.responsibles.length > 1"
                         icon="mdi-delete-outline"
                         color="error"
                         variant="text"
@@ -234,7 +217,7 @@
                           <VTextField
                             v-model="responsible.phone"
                             label="Telefone"
-                            :rules="requiredRules"
+                            :rules="[...requiredRules, ...phoneRules()]"
                           />
                         </VCol>
 
@@ -584,6 +567,7 @@ import { employeesApi } from '@/api/employees-api'
 import { medicinesApi } from '@/api/medicines-api'
 import { patientsApi } from '@/api/patients-api'
 import { ensureSuccessfulResponse } from '@/utils/apiResponse'
+import { cpfRules, phoneRules } from '@/utils/validators'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
@@ -649,7 +633,7 @@ const model = ref({
   cpf: '',
   observations: '',
   bloodTypeId: null,
-  responsibles: [newResponsible()],
+  responsibles: [],
   clinicalConditions: [],
   scheduledMedicines: [],
 })

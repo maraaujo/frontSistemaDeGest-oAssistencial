@@ -40,9 +40,12 @@
                 cols="12"
                 md="3"
               >
-                <VTextField
-                  v-model="filterModel.name"
+                <VAutocomplete
+                  v-model="filterModel.patientId"
                   label="Nome"
+                  :items="patientOptions"
+                  item-title="name"
+                  item-value="id"
                   clearable
                 />
               </VCol>
@@ -137,7 +140,7 @@
               </h6>
 
               <span class="text-caption text-medium-emphasis">
-                {{ item.cpf || 'CPF não informado' }}
+                {{ item.cpf ? formatCpf(item.cpf) : 'CPF não informado' }}
               </span>
             </div>
           </template>
@@ -147,7 +150,7 @@
           </template>
 
           <template #[`item.phone`]="{ item }">
-            {{ item.phone || '-' }}
+            {{ item.phone ? formatPhone(item.phone) : '-' }}
           </template>
 
           <template #[`item.gender`]="{ item }">
@@ -209,6 +212,7 @@
 <script setup>
 import { clinicalConditionsApi } from '@/api/clinical-conditions-api';
 import { patientsApi } from '@/api/patients-api';
+import { formatCpf, formatPhone } from '@/utils/validators';
 import { onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
@@ -218,10 +222,11 @@ const router = useRouter()
 const conditions = ref([])
 const loading = ref(false)
 const patients = ref([])
+const patientOptions = ref([])
 
 const filterModel = ref({
   page: 1,
-  name: '',
+  patientId: null,
   cpf: '',
   phone: '',
   gender: '',
@@ -261,8 +266,19 @@ const getAllConditions = async () => {
   } catch (error) {
     console.error('Erro ao buscar condições clínicas:', error)
     toast.error('Não foi possível buscar as condições clínicas.')
-    
+
     return []
+  }
+}
+
+const getAllPatients = async () => {
+  try {
+    const ret = await patientsApi.getAll()
+    const data = getResponseData(ret)
+
+    patientOptions.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('Erro ao buscar acolhidos:', error)
   }
 }
 
@@ -309,7 +325,7 @@ const submit = async () => {
 const cleanFilters = async () => {
   filterModel.value = {
     page: 1,
-    name: '',
+    patientId: null,
     cpf: '',
     phone: '',
     gender: '',
@@ -353,6 +369,7 @@ const formatDate = value => {
 
 onMounted(() => {
   getPatients(),
-  getAllConditions()
+  getAllConditions(),
+  getAllPatients()
 })
 </script>

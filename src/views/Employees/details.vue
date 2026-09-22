@@ -86,7 +86,7 @@
                 CPF
               </div>
               <div class="text-body-1 font-weight-bold">
-                {{ employee.cpf || 'Não informado' }}
+                {{ employee.cpf ? formatCpf(employee.cpf) : 'Não informado' }}
               </div>
             </VCol>
 
@@ -98,7 +98,7 @@
                 Telefone
               </div>
               <div class="text-body-1 font-weight-bold">
-                {{ employee.phone || 'Não informado' }}
+                {{ employee.phone ? formatPhone(employee.phone) : 'Não informado' }}
               </div>
             </VCol>
 
@@ -151,6 +151,7 @@
 
 <script setup>
 import { employeesApi } from '@/api/employees-api';
+import { formatCpf, formatPhone } from '@/utils/validators';
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';

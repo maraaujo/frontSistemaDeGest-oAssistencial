@@ -69,7 +69,7 @@
                   v-model="model.cpf"
                   label="CPF"
                   placeholder="000.000.000-00"
-                  :rules="requiredRules"
+                  :rules="[...requiredRules, ...cpfRules()]"
                 />
               </VCol>
 
@@ -81,7 +81,7 @@
                   v-model="model.phone"
                   label="Telefone"
                   placeholder="(00) 00000-0000"
-                  :rules="requiredRules"
+                  :rules="[...requiredRules, ...phoneRules()]"
                 />
               </VCol>
 
@@ -157,6 +157,7 @@
 import { departmentsApi } from '@/api/departments-api';
 import { employeesApi } from '@/api/employees-api';
 import { ensureSuccessfulResponse } from '@/utils/apiResponse';
+import { cpfRules, formatCpf, formatPhone, phoneRules } from '@/utils/validators';
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
@@ -211,7 +212,11 @@ const loadEmployee = async () => {
     if (data.admissionDate && data.admissionDate.includes('T')) {
       data.admissionDate = data.admissionDate.split('T')[0]
     }
-    
+
+    // O backend agora armazena CPF/telefone só com dígitos; exibe com máscara.
+    data.cpf = formatCpf(data.cpf)
+    data.phone = formatPhone(data.phone)
+
     model.value = data
   } catch (error) {
     console.error('Erro ao carregar funcionário:', error)

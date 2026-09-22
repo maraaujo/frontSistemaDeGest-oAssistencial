@@ -148,14 +148,7 @@
                 <VCol cols="12" md="4">
                   <VTextField
                     label="CPF"
-                    :model-value="patient.cpf"
-                    readonly
-                  />
-                </VCol>
-                <VCol cols="12" md="4">
-                  <VTextField
-                    label="Documento"
-                    :model-value="patient.document"
+                    :model-value="formatCpf(patient.cpf)"
                     readonly
                   />
                 </VCol>
@@ -204,7 +197,7 @@
                 loading-text="Carregando..."
               >
                 <template #[`item.phone`]="{ item }">
-                  {{ item.phone || '-' }}
+                  {{ item.phone ? formatPhone(item.phone) : '-' }}
                 </template>
 
                 <template #[`item.relationship`]="{ item }">
@@ -291,6 +284,7 @@
 
 <script setup>
 import { patientsApi } from '@/api/patients-api';
+import { formatCpf, formatPhone } from '@/utils/validators';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';

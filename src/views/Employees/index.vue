@@ -122,13 +122,13 @@
               </h6>
 
               <span class="text-caption text-medium-emphasis">
-                {{ item.cpf || 'CPF não informado' }}
+                {{ item.cpf ? formatCpf(item.cpf) : 'CPF não informado' }}
               </span>
             </div>
           </template>
 
           <template #[`item.phone`]="{ item }">
-            {{ item.phone || '-' }}
+            {{ item.phone ? formatPhone(item.phone) : '-' }}
           </template>
 
           <template #[`item.position`]="{ item }">
@@ -189,6 +189,7 @@
 
 <script setup>
 import { employeesApi } from '@/api/employees-api';
+import { formatCpf, formatPhone } from '@/utils/validators';
 import { onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';

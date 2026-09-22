@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import auth from '@/auth';
 
 
 
@@ -36,6 +37,7 @@ const router = createRouter({
       name: 'patient-reminders',
       component: () => import('@/views/PatientReminders/index.vue'),
       meta: {
+        requiresAuth: true,
         layout: 'content',
       },
     },
@@ -44,6 +46,7 @@ const router = createRouter({
   name: 'patient-medicines',
   component: () => import('@/views/PatientMedicines/index.vue'),
   meta: {
+        requiresAuth: true,
         layout: 'content',
       },
 },
@@ -229,6 +232,21 @@ const router = createRouter({
       },
     },
   ],
+})
+
+// Guard de autenticação: bloqueia rotas com `requiresAuth` quando não há sessão
+// (token em sessionStorage). Ao chegar deslogado, redireciona para o login
+// preservando o destino em `redirect`. Usuário já logado não vê login/registro.
+router.beforeEach(to => {
+  const isLoggedIn = auth.loggedIn()
+
+  if (to.meta?.requiresAuth && !isLoggedIn)
+    return { name: 'login', query: { redirect: to.fullPath } }
+
+  if (isLoggedIn && (to.name === 'login' || to.name === 'register'))
+    return { name: 'patient-reminders' }
+
+  return true
 })
 
 // Após um novo deploy, uma aba já aberta pode tentar carregar um chunk JS antigo

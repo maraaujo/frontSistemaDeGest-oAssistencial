@@ -62,7 +62,7 @@
                   v-model="model.cpf"
                   label="CPF"
                   placeholder="000.000.000-00"
-                  :rules="requiredRules"
+                  :rules="[...requiredRules, ...cpfRules()]"
                 />
               </VCol>
 
@@ -74,7 +74,7 @@
                   v-model="model.phone"
                   label="Telefone"
                   placeholder="(00) 00000-0000"
-                  :rules="requiredRules"
+                  :rules="[...requiredRules, ...phoneRules()]"
                 />
               </VCol>
 
@@ -149,6 +149,7 @@
 <script setup>
 import { employeesApi } from '@/api/employees-api';
 import { ensureSuccessfulResponse } from '@/utils/apiResponse';
+import { cpfRules, phoneRules } from '@/utils/validators';
 import { departmentsApi } from '@/api/departments-api';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';

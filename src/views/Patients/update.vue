@@ -112,6 +112,8 @@
                       <VTextField
                         v-model="model.phone"
                         label="Telefone"
+                        placeholder="(00) 00000-0000"
+                        :rules="phoneRules()"
                       />
                     </VCol>
 
@@ -122,18 +124,12 @@
                       <VTextField
                         v-model="model.cpf"
                         label="CPF"
+                        placeholder="000.000.000-00"
+                        :rules="cpfRules()"
                       />
                     </VCol>
 
-                    <VCol
-                      cols="12"
-                      md="4"
-                    >
-                      <VTextField
-                        v-model="model.document"
-                        label="Documento"
-                      />
-                    </VCol>
+                  
 
                     <VCol
                       cols="12"
@@ -211,7 +207,6 @@
                     <VCardTitle class="d-flex align-center justify-space-between text-subtitle-1">
                       Responsável {{ index + 1 }}
                       <VBtn
-                        v-if="model.responsibles.length > 1"
                         icon="mdi-delete-outline"
                         color="error"
                         variant="text"
@@ -240,7 +235,7 @@
                           <VTextField
                             v-model="responsible.phone"
                             label="Telefone"
-                            :rules="requiredRules"
+                            :rules="[...requiredRules, ...phoneRules()]"
                           />
                         </VCol>
 
@@ -591,6 +586,7 @@ import { medicinesApi } from '@/api/medicines-api'
 import { patientClinicalConditionsApi } from '@/api/patient-clinical-conditions-api'
 import { patientsApi } from '@/api/patients-api'
 import { ensureSuccessfulResponse } from '@/utils/apiResponse'
+import { cpfRules, formatCpf, formatPhone, phoneRules } from '@/utils/validators'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
@@ -796,24 +792,22 @@ const loadPatient = async () => {
     model.value.id = Number(patient.id ?? id)
     model.value.name = patient.name ?? ''
     model.value.document = patient.document ?? ''
-    model.value.phone = patient.phone ?? ''
+    // O backend agora armazena CPF/telefone só com dígitos; exibe com máscara.
+    model.value.phone = formatPhone(patient.phone ?? '')
     model.value.bloodTypeId = Number(bloodType?.id ?? patient.bloodTypeId ?? patient.idBloodType) || null
     model.value.birthDate = formatDateInput(patient.birthDate)
     model.value.gender = patient.gender ?? ''
-    model.value.cpf = patient.cpf ?? ''
+    model.value.cpf = formatCpf(patient.cpf ?? '')
     model.value.observations = patient.observations ?? ''
 
     model.value.responsibles = getList(data?.responsibles).map(responsible => ({
       id: Number(responsible.id) || 0,
       patientId: Number(patient.id ?? id),
       name: responsible.name ?? '',
-      phone: responsible.phone ?? '',
+      phone: formatPhone(responsible.phone ?? ''),
       relationship: responsible.relationship ?? '',
       address: responsible.address ?? '',
     }))
-
-    if (!model.value.responsibles.length)
-      model.value.responsibles.push(newResponsible())
 
     model.value.scheduledMedicines = getList(data?.medicines).map(medicine => ({
       id: 0,
@@ -944,7 +938,7 @@ const submit = async () => {
   try {
     const patientId = Number(model.value.id)
 
-    const patient = {
+    const payload = {
       id: patientId,
       name: model.value.name.trim(),
       birthDate: new Date(`${model.value.birthDate}T00:00:00`).toISOString(),
@@ -954,11 +948,6 @@ const submit = async () => {
       cpf: model.value.cpf?.trim() || '',
       observations: model.value.observations?.trim() || '',
       bloodTypeId: Number(model.value.bloodTypeId),
-    }
-
-
-    const payload = {
-      patient,
       responsibles: model.value.responsibles.map(responsible => ({
         id: Number(responsible.id) || 0,
         patientId,

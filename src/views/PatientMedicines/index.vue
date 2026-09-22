@@ -18,16 +18,20 @@
               <VRow>
                 <VCol
                   cols="12"
-                  sm="4"
+                  sm="6"
                 >
-                  <VTextField
-                    v-model="filtermodel.patientName"
-                    label="Nome do Paciente"
+                  <VAutocomplete
+                    v-model="filtermodel.patientId"
+                    label="Paciente"
+                    :items="listPatient"
+                    item-title="name"
+                    item-value="id"
+                    clearable
                   />
                 </VCol>
                 <VCol
                   cols="12"
-                  sm="4"
+                  sm="6"
                 >
                   <VAutocomplete
                     v-model="filtermodel.medicineId"
@@ -37,23 +41,7 @@
                     :items="listMedicine"
                   />
                 </VCol>
-                <VCol
-                  cols="12"
-                  sm="4"
-                >
-                  <VAutocomplete
-                    v-model="filtermodel.responsibleEmployeeId"
-                    chips
-                    clearable
-                    multiple
-                    small-chips
-                    label="Responsável"
-                    :items="listResponsibleEmployee"
-                    item-title="name"
-                    item-value="id"
-                  />
-                </VCol>
-
+               
                 <VCol cols="12">
                   <div class="d-flex flex-wrap gap-4 justify-space-between">
                     <VBtn
@@ -373,6 +361,7 @@ import { employeesApi } from "@/api/employees-api"
 import { medicationAdministrationsApi } from "@/api/medication-administrations-api"
 import { medicinePatientClinicalConditionsApi } from "@/api/medicine-patient-clinical-conditions-api"
 import { medicinesApi } from "@/api/medicines-api"
+import { patientsApi } from "@/api/patients-api"
 import { ensureSuccessfulResponse } from '@/utils/apiResponse'
 import 'cleave.js/dist/addons/cleave-phone.br'
 import { onMounted, ref } from "vue"
@@ -403,6 +392,7 @@ const periodicity = ref()
 const router = useRouter()
 const listResponsibleEmployee = ref([])
 const listMedicine = ref([])
+const listPatient = ref([])
 
 const requiredRules = [value => value !== null && value !== undefined && value !== '' || 'Campo obrigatório']
 const statusOptions = ['Administrado', 'Não administrado', 'Atrasado', 'Cancelado']
@@ -503,6 +493,12 @@ const getMedicines = async () => {
   const ret = await medicinesApi.getAll()
 
   listMedicine.value = ret.data.data ?? ret.data
+}
+
+const getPatients = async () => {
+  const ret = await patientsApi.getAll()
+
+  listPatient.value = ret.data.data ?? ret.data
 }
 
 const getListEmployees = async () => {
@@ -636,6 +632,7 @@ const saveAdministration = async () => {
 onMounted(() => {
   getMedicinePatientClinicalCondicions(),
   getMedicines(),
-  getListEmployees()
+  getListEmployees(),
+  getPatients()
 })
 </script>

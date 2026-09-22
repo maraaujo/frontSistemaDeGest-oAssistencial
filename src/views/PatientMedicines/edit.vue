@@ -420,7 +420,7 @@ const submit = async () => {
   saving.value = true
 
   try {
-    const response = await medicinePatientClinicalConditionsApi.update(payload)
+    const response = await medicinePatientClinicalConditionsApi.update(payload.id, payload)
 
     ensureSuccessfulResponse(response, 'Não foi possível atualizar a prescrição.')
 

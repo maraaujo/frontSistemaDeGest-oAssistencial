@@ -29,9 +29,13 @@
               sm="6"
               md="3"
             >
-              <VTextField
-                v-model="filtermodel.patientName"
+              <VAutocomplete
+                v-model="filtermodel.patientId"
                 label="Paciente"
+                :items="listPatient"
+                item-title="name"
+                item-value="id"
+                clearable
               />
             </VCol>
 
@@ -144,6 +148,7 @@
 <script setup>
 import { medicationAdministrationsApi } from '@/api/medication-administrations-api'
 import { medicinesApi } from '@/api/medicines-api'
+import { patientsApi } from '@/api/patients-api'
 import { onMounted, ref } from 'vue'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
 import { toast } from 'vue3-toastify'
@@ -165,6 +170,7 @@ const statusOptions = ['Administrado', 'Não administrado', 'Atrasado', 'Cancela
 const loading = ref(false)
 const items = ref([])
 const listMedicine = ref([])
+const listPatient = ref([])
 const filtermodel = ref({})
 const paginationData = ref({ page: 1, totalPages: 1, perPage: 15, count: 0 })
 
@@ -192,6 +198,14 @@ const loadMedicines = async () => {
     listMedicine.value = getList(getData(await medicinesApi.getAll()))
   } catch (error) {
     console.error('Erro ao carregar medicamentos:', error)
+  }
+}
+
+const loadPatients = async () => {
+  try {
+    listPatient.value = getList(getData(await patientsApi.getAll()))
+  } catch (error) {
+    console.error('Erro ao carregar pacientes:', error)
   }
 }
 
@@ -282,5 +296,6 @@ const changePage = async page => {
 onMounted(() => {
   loadItems()
   loadMedicines()
+  loadPatients()
 })
 </script>

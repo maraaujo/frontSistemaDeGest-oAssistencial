@@ -327,7 +327,7 @@ const submit = async () => {
         type: model.value.type.trim(),
       }
 
-      response = await clinicalConditionsApi.update(payload)
+      response = await clinicalConditionsApi.update(payload.id, payload)
     } else {
       const payload = {
         name: model.value.name.trim(),

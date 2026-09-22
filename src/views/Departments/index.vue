@@ -306,7 +306,7 @@ const submit = async () => {
     }
 
     const response = editing.value
-      ? await departmentsApi.update({ id: Number(model.value.id), ...payload })
+      ? await departmentsApi.update(Number(model.value.id), { id: Number(model.value.id), ...payload })
       : await departmentsApi.create(payload)
 
     ensureSuccessfulResponse(response, 'Não foi possível salvar o departamento.')

@@ -4,7 +4,7 @@ const getAll = async () => await apiService.get('/Employee/GetAllEmployees');
 const getById = async (id) => await apiService.get(`/Employee/GetEmployeeById/${id}`);
 const create = async (model) => await apiService.post('/Employee/CreateEmployee', model);
 const update = async (id, model) => await apiService.put(`/Employee/Update/${id}`,model);
-const remove = async (id) => await apiService.delete(`/Employee/DeleteEmployee/${id}`);
+const remove = async (id) => await apiService.get(`/Employee/DeleteEmployee/${id}`);
 const filter = async (filter) => await apiService.post('/Employee/GetEmployeeByFilter', filter);
 
 export const employeesApi = {

@@ -15,15 +15,16 @@ export default [
     to: { name: 'patient-reminders' },
   },
   {
-    name: 'Agendamentos',
-    icon: 'mdi-calendar-clock-outline',
-    to: { name: 'appointments' },
-  },
-  {
     name: 'Administração de medicamentos',
     icon: 'mdi-clock-outline',
     to: { name: 'patient-medicines' },
   },
+  {
+    name: 'Agendamentos',
+    icon: 'mdi-calendar-clock-outline',
+    to: { name: 'appointments' },
+  },
+
   {
     name: 'Pacientes',
     icon: 'mdi-account-multiple-outline',

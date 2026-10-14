@@ -27,7 +27,7 @@
             <VCol
               cols="12"
               sm="6"
-              md="3"
+              md="4"
             >
               <VAutocomplete
                 v-model="filtermodel.patientId"
@@ -42,7 +42,7 @@
             <VCol
               cols="12"
               sm="6"
-              md="3"
+              md="4"
             >
               <VAutocomplete
                 v-model="filtermodel.medicineId"
@@ -57,37 +57,13 @@
             <VCol
               cols="12"
               sm="6"
-              md="2"
+              md="4"
             >
               <VAutocomplete
                 v-model="filtermodel.status"
                 label="Status"
                 :items="statusOptions"
                 clearable
-              />
-            </VCol>
-
-            <VCol
-              cols="12"
-              sm="6"
-              md="2"
-            >
-              <VTextField
-                v-model="filtermodel.startDate"
-                label="Data inicial"
-                type="date"
-              />
-            </VCol>
-
-            <VCol
-              cols="12"
-              sm="6"
-              md="2"
-            >
-              <VTextField
-                v-model="filtermodel.endDate"
-                label="Data final"
-                type="date"
               />
             </VCol>
 

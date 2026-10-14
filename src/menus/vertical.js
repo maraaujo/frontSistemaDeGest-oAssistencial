@@ -56,6 +56,11 @@ export default [
     to: { name: 'administered-medicines-history' },
   },
   {
+    name: 'Relatório do dia',
+    icon: 'mdi-clipboard-text-clock-outline',
+    to: { name: 'daily-medication-report' },
+  },
+  {
     name: 'Assistente Interno',
     icon: 'mdi-robot-outline',
     to: { name: 'internal-agent' },

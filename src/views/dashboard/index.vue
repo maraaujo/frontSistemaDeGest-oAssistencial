@@ -292,6 +292,7 @@
 import { appointmentsApi } from '@/api/appointments-api';
 import { medicationAdministrationsApi } from '@/api/medication-administrations-api';
 import { patientsApi } from '@/api/patients-api';
+import { minutesUntilDose } from '@/utils/medicationTime';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -431,11 +432,13 @@ const loadMedicineReminders = async () => {
   try {
     const data = getResponseData(await medicationAdministrationsApi.getMedicineReminders())
     const list = extractList(data, ['patientReminders', 'medicineReminders', 'reminders'])
-    const sorted = [...list].sort((a, b) => Number(a.minutesRemaining ?? Infinity) - Number(b.minutesRemaining ?? Infinity))
+    const nowMs = Date.now()
+    const withMinutes = list.map(item => ({ ...item, liveMinutes: minutesUntilDose(item, nowMs) }))
+    const sorted = withMinutes.sort((a, b) => (a.liveMinutes ?? Infinity) - (b.liveMinutes ?? Infinity))
 
     reminders.value = sorted.slice(0, 5)
     totals.value.scheduledToday = list.length
-    totals.value.delayedMedications = list.filter(item => Number(item.minutesRemaining) < 0).length
+    totals.value.delayedMedications = withMinutes.filter(item => item.liveMinutes < 0).length
   } catch (error) {
     console.error('Erro ao carregar lembretes do dashboard:', error)
     reminders.value = []
@@ -521,7 +524,7 @@ const formatTime = value => {
 }
 
 const getReminderStatus = item => {
-  const minutes = Number(item.minutesRemaining)
+  const minutes = item.liveMinutes ?? minutesUntilDose(item)
 
   if (!Number.isFinite(minutes))
     return { label: 'Programado', color: 'info' }

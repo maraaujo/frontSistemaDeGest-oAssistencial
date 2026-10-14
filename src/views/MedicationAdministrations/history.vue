@@ -126,6 +126,22 @@
             {{ formatDateTime(item.administeredDateTime) }}
           </template>
 
+          <template #[`item.nextDoseDateTime`]="{ item }">
+            <VChip
+              v-if="item.nextDoseDateTime || item.administrationTime"
+              color="primary"
+              variant="tonal"
+              size="small"
+            >
+              <VIcon
+                start
+                icon="mdi-clock-outline"
+              />
+              {{ formatNextDose(item) }}
+            </VChip>
+            <span v-else>-</span>
+          </template>
+
           <template #[`item.observations`]="{ item }">
             <span class="text-wrap">{{ item.observations || '-' }}</span>
           </template>
@@ -160,6 +176,7 @@ const headers = [
   { title: 'Dosagem', key: 'prescribedDosage', sortable: true },
   { title: 'Horário previsto', key: 'scheduledDateTime', sortable: true },
   { title: 'Horário administrado', key: 'administeredDateTime', sortable: true },
+  { title: 'Próxima medicação', key: 'nextDoseDateTime', sortable: true },
   { title: 'Status', key: 'status', sortable: true },
   { title: 'Funcionário', key: 'employeeName', sortable: true },
   { title: 'Observações', key: 'observations', sortable: false },
@@ -191,6 +208,17 @@ const formatDateTime = value => {
     return '-'
 
   return new Date(value).toLocaleString('pt-BR')
+}
+
+// Proxima medicacao: vem do backend com fuso (-03:00). Se nao vier, usa o
+// horario planejado (administrationTime, "HH:mm:ss").
+const formatNextDose = item => {
+  const date = new Date(item.nextDoseDateTime)
+
+  if (!Number.isNaN(date.getTime()))
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+  return typeof item.administrationTime === 'string' ? item.administrationTime.slice(0, 5) : '-'
 }
 
 const loadMedicines = async () => {

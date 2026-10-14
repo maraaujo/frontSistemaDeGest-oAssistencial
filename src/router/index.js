@@ -158,6 +158,12 @@ const router = createRouter({
   meta: { requiresAuth: true, layout: 'content', },
 },
 {
+  path: '/daily-medication-report/print',
+  name: 'daily-medication-report-print',
+  component: () => import('@/views/MedicationAdministrations/daily-report-print.vue'),
+  meta: { requiresAuth: true, layout: 'blank', },
+},
+{
   path: '/appointments',
   name: 'appointments',
   component: () => import('@/views/Appointments/index.vue'),

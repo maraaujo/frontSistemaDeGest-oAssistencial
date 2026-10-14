@@ -22,15 +22,27 @@
               </div>
             </div>
 
-            <VBtn
-              variant="tonal"
-              color="primary"
-              prepend-icon="mdi-refresh"
-              :loading="loading"
-              @click="loadReport"
-            >
-              Atualizar
-            </VBtn>
+            <div class="d-flex align-center gap-3 flex-wrap">
+              <VBtn
+                variant="outlined"
+                color="primary"
+                prepend-icon="mdi-file-pdf-box"
+                :disabled="loading || error || !items.length"
+                @click="generatePdf"
+              >
+                Gerar PDF
+              </VBtn>
+
+              <VBtn
+                variant="tonal"
+                color="primary"
+                prepend-icon="mdi-refresh"
+                :loading="loading"
+                @click="loadReport"
+              >
+                Atualizar
+              </VBtn>
+            </div>
           </div>
         </VCardText>
 
@@ -252,17 +264,20 @@
 <script setup>
 import { medicationAdministrationsApi } from '@/api/medication-administrations-api'
 import { patientsApi } from '@/api/patients-api'
+import {
+  formatTime,
+  getReportList,
+  getStatusColor,
+  getToday,
+  groupByPatient,
+  summarizeByStatus,
+} from '@/utils/dailyMedicationReport'
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
 import { toast } from 'vue3-toastify'
 
-// Data local (YYYY-MM-DD) — toISOString() usaria UTC e poderia trocar o dia
-const getToday = () => {
-  const now = new Date()
-  const pad = value => String(value).padStart(2, '0')
-
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-}
+const router = useRouter()
 
 const loading = ref(false)
 const loadingPatients = ref(false)
@@ -274,54 +289,17 @@ const listPatients = ref([])
 const filtermodel = ref({ date: getToday(), patientId: null })
 let requestId = 0
 
-const getData = response => response?.data?.data ?? response?.data
+const summary = computed(() => summarizeByStatus(items.value))
+const groupedItems = computed(() => groupByPatient(items.value))
 
-const getList = value => {
-  if (Array.isArray(value))
-    return value
+// Abre a versão para impressão na mesma aba (o token fica no sessionStorage da aba)
+const generatePdf = () => {
+  const query = { date: filtermodel.value.date || getToday() }
 
-  return value?.$values ?? value?.items ?? []
-}
+  if (filtermodel.value.patientId)
+    query.patientId = filtermodel.value.patientId
 
-const summary = computed(() => items.value.reduce(
-  (acc, item) => {
-    if (item.status in acc)
-      acc[item.status]++
-
-    return acc
-  },
-  { Administrado: 0, Atrasado: 0, Pendente: 0 },
-))
-
-// A resposta já vem ordenada por acolhido e horário; o agrupamento preserva essa ordem
-const groupedItems = computed(() => {
-  const groups = new Map()
-
-  items.value.forEach(item => {
-    if (!groups.has(item.patientId))
-      groups.set(item.patientId, { patientId: item.patientId, patientName: item.patientName, items: [] })
-
-    groups.get(item.patientId).items.push(item)
-  })
-
-  return [...groups.values()]
-})
-
-// new Date() respeita o offset (-03:00) da string e o resultado é exibido no fuso local
-const formatTime = (value, fallback) => {
-  const date = value ? new Date(value) : null
-
-  if (date && !Number.isNaN(date.getTime()))
-    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-
-  return typeof fallback === 'string' ? fallback.substring(0, 5) : '-'
-}
-
-const getStatusColor = status => {
-  if (status === 'Administrado') return 'success'
-  if (status === 'Atrasado') return 'error'
-
-  return 'secondary'
+  router.push({ name: 'daily-medication-report-print', query })
 }
 
 const loadReport = async () => {
@@ -340,7 +318,7 @@ const loadReport = async () => {
     if (currentRequest !== requestId)
       return
 
-    items.value = getList(getData(ret))
+    items.value = getReportList(ret)
   } catch (err) {
     if (currentRequest !== requestId)
       return
@@ -359,9 +337,10 @@ const loadPatients = async () => {
   loadingPatients.value = true
 
   try {
-    const data = getData(await patientsApi.getAll())
+    const ret = await patientsApi.getAll()
+    const data = ret?.data?.data ?? ret?.data
 
-    listPatients.value = Array.isArray(data) ? data : data?.patients ?? getList(data)
+    listPatients.value = Array.isArray(data) ? data : data?.patients ?? getReportList(ret)
   } catch (err) {
     console.error('Erro ao carregar acolhidos:', err)
   } finally {

@@ -103,9 +103,9 @@
           </template>
 
           <template #item.minutesRemaining="{ item }">
-            <VChip size="large" :color="getReminderColor(item.minutesRemaining)">
-              <VIcon start :icon="item.minutesRemaining < 0 ? 'mdi-alert-circle' : 'mdi-timer-outline'" />
-              {{ getReminderText(item.minutesRemaining) }}
+            <VChip size="large" :color="getReminderColor(item.liveMinutes)">
+              <VIcon start :icon="item.liveMinutes < 0 ? 'mdi-alert-circle' : 'mdi-timer-outline'" />
+              {{ formatRemaining(item.liveMinutes) }}
             </VChip>
           </template>
         </VDataTable>
@@ -116,6 +116,7 @@
 
 <script setup>
 import { medicationAdministrationsApi } from "@/api/medication-administrations-api";
+import { formatRemaining, minutesUntilDose } from "@/utils/medicationTime";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 import { toast } from 'vue3-toastify';
@@ -123,7 +124,12 @@ import { toast } from 'vue3-toastify';
 const loading = ref(false)
 const lastUpdated = ref("")
 const listPatientReminders = ref([])
+
+// Relogio local: a contagem e recalculada a partir do nextDoseDateTime a cada
+// tick, sem esperar a proxima busca na API (que acontece a cada minuto).
+const now = ref(Date.now())
 let refreshInterval
+let clockInterval
 
 const headers = [
   { title: "Acolhido", key: "patientName", sortable: true },
@@ -135,12 +141,9 @@ const headers = [
   { title: "Tempo restante", key: "minutesRemaining", sortable: true },
 ]
 
-const sortedReminders = computed(() => [...listPatientReminders.value].sort((a, b) => {
-  const minutesA = Number.isFinite(Number(a.minutesRemaining)) ? Number(a.minutesRemaining) : Infinity
-  const minutesB = Number.isFinite(Number(b.minutesRemaining)) ? Number(b.minutesRemaining) : Infinity
-
-  return minutesA - minutesB
-}))
+const sortedReminders = computed(() => listPatientReminders.value
+  .map(item => ({ ...item, liveMinutes: minutesUntilDose(item, now.value) }))
+  .sort((a, b) => (a.liveMinutes ?? Infinity) - (b.liveMinutes ?? Infinity)))
 
 const getPatientReminders = async () => {
   try {
@@ -205,21 +208,20 @@ const getReminderColor = minutesRemaining => {
   return "success"
 }
 
-// Função para formatar o texto do lembrete com base no tempo restante
-const getReminderText = minutesRemaining => {
-  if (minutesRemaining === null || minutesRemaining === undefined) return "Não informado"
-  if (minutesRemaining < 0) return `Atrasado ${Math.abs(minutesRemaining)} min`
-  if (minutesRemaining === 0) return "Agora"
-  return `Em ${minutesRemaining} min`
-}
-
 onMounted(() => {
   getPatientReminders()
-  // Atualiza os lembretes a cada minuto
- refreshInterval = window.setInterval(getPatientReminders, 60_000)
+
+  // Busca a lista na API a cada minuto (novos/administrados)...
+  refreshInterval = window.setInterval(getPatientReminders, 60_000)
+
+  // ...e atualiza a contagem na tela a cada 5 segundos.
+  clockInterval = window.setInterval(() => { now.value = Date.now() }, 5_000)
 })
 
-onBeforeUnmount(() => window.clearInterval(refreshInterval))
+onBeforeUnmount(() => {
+  window.clearInterval(refreshInterval)
+  window.clearInterval(clockInterval)
+})
 </script>
 
 <style lang="scss">

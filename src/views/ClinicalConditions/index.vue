@@ -16,12 +16,15 @@
                 Condições clínicas
               </div>
               <div class="text-body-2 text-medium-emphasis">
-                Consulte e mantenha as condições clínicas disponíveis no sistema.
+                {{ canManage
+                  ? 'Consulte e mantenha as condições clínicas disponíveis no sistema.'
+                  : 'Consulte as condições clínicas disponíveis no sistema.' }}
               </div>
             </div>
           </div>
 
           <VBtn
+            v-if="canManage"
             color="primary"
             prepend-icon="mdi-plus"
             @click="openCreate"
@@ -221,10 +224,20 @@
 
 <script setup>
 import { clinicalConditionsApi } from '@/api/clinical-conditions-api';
+import auth from '@/auth';
 import { ensureSuccessfulResponse } from '@/utils/apiResponse';
 import { computed, onMounted, ref } from 'vue';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
 import { toast } from 'vue3-toastify';
+
+// O catálogo de condições clínicas é compartilhado por todas as instituições:
+// só o administrador da plataforma (Administrador sem instituição, policy
+// "SaasAdmin" no backend) cria, edita ou exclui. Os demais apenas consultam.
+const currentUser = auth.getUserStorage()
+
+const canManage = !!currentUser
+  && (currentUser.institutionId === null || currentUser.institutionId === undefined)
+  && String(currentUser.userType ?? '').toLowerCase() === 'administrador'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -241,7 +254,7 @@ const headers = [
   { title: 'Nome', key: 'name', sortable: true },
   { title: 'Tipo', key: 'type', sortable: true },
   { title: 'Descrição', key: 'description', sortable: false },
-  { title: 'Ações', key: 'actions', sortable: false },
+  ...(canManage ? [{ title: 'Ações', key: 'actions', sortable: false }] : []),
 ]
 
 const requiredRules = [value => Boolean(String(value ?? '').trim()) || 'Campo obrigatório']
@@ -283,11 +296,17 @@ const loadClinicalConditions = async () => {
 }
 
 const openCreate = () => {
+  if (!canManage)
+    return
+
   model.value = emptyModel()
   formDialog.value = true
 }
 
 const openEdit = item => {
+  if (!canManage)
+    return
+
   model.value = {
     id: Number(item.id),
     name: item.name ?? '',
@@ -352,6 +371,9 @@ const submit = async () => {
 }
 
 const openDelete = item => {
+  if (!canManage)
+    return
+
   selectedClinicalCondition.value = item
   deleteDialog.value = true
 }

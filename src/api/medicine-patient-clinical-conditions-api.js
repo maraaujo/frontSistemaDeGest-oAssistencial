@@ -4,7 +4,7 @@ const getAll = async () => await apiService.get('/MedicinePatientClinicalConditi
 const getById = async (id) => await apiService.get(`/MedicinePatientClinicalCondition/GetById?id=${id}`);
 const create = async (model) => await apiService.post('/MedicinePatientClinicalCondition/Create', model);
 const update = async (id, model) => await apiService.put(`/MedicinePatientClinicalCondition/Update/${id}`, model);
-const remove = async (id) => await apiService.get(`/MedicinePatientClinicalCondition/Delete/${id}`);
+const remove = async (id) => await apiService.delete(`/MedicinePatientClinicalCondition/Delete/${id}`);
 const filter = async (filter) => await apiService.post('/MedicinePatientClinicalCondition/GetMedicinePatientClinicalConditionByFilter', filter);
 
 export const medicinePatientClinicalConditionsApi = {

@@ -181,6 +181,7 @@ const emailRules = [
 const passwordRules = [
   ...requiredRules,
   value => String(value ?? '').length >= 8 || 'A senha deve ter pelo menos 8 caracteres',
+  value => (/\p{L}/u.test(String(value ?? '')) && /\d/.test(String(value ?? ''))) || 'A senha deve ter letras e números',
 ]
 const confirmationRules = [
   ...requiredRules,

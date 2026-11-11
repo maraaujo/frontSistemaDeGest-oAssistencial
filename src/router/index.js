@@ -211,6 +211,13 @@ const router = createRouter({
   meta: { requiresAuth: true, superAdmin: true, layout: 'content', },
 },
 {
+  // Versão para impressão/PDF do painel administrativo: usa layout 'blank' (sem menu).
+  path: '/admin/overview/print',
+  name: 'admin-overview-print',
+  component: () => import('@/views/AdminOverview/print.vue'),
+  meta: { requiresAuth: true, superAdmin: true, layout: 'blank', },
+},
+{
   path: '/admin/accounts',
   name: 'admin-accounts',
   component: () => import('@/views/AdminAccounts/index.vue'),

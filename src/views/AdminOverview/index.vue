@@ -1,13 +1,14 @@
 <script setup>
 import { adminOverviewApi, formatRenewalText, SUBSCRIPTION_STATUS_META } from '@/api/admin-overview-api'
-import { buildCsv, buildOverviewSections, downloadCsv } from '@/utils/adminOverviewExport'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { toast } from 'vue3-toastify'
+import { useRouter } from 'vue-router'
 import InstitutionsTable from './InstitutionsTable.vue'
 import RevenueByPlanChart from './RevenueByPlanChart.vue'
 import RevenueTrendChart from './RevenueTrendChart.vue'
 import SubscriptionMovementChart from './SubscriptionMovementChart.vue'
 import SubscriptionStatusChart from './SubscriptionStatusChart.vue'
+
+const router = useRouter()
 
 const periods = [
   { title: '30 dias', value: '30d' },
@@ -62,9 +63,6 @@ const institutionsPagination = ref({ page: 1, totalPages: 1, count: 0, perPage: 
 
 // Planos reais carregados do backend (usados no filtro da tabela de instituições).
 const plans = ref([])
-
-// Fica true enquanto o CSV da exportação está sendo montado.
-const exporting = ref(false)
 
 // Fica true enquanto qualquer bloco do painel (KPIs, gráficos ou tabela) ainda está carregando.
 const anyLoading = computed(() =>
@@ -382,60 +380,26 @@ const loadAll = async () => {
 }
 
 /**
- * Busca TODAS as instituições que atendem aos filtros atuais da tabela (busca, situação, plano),
- * percorrendo as páginas de GET /AdminOverview/Institutions de 100 em 100.
- * @returns {Promise<object[]>}
+ * Botão de exportar: abre a versão para impressão do painel (como o relatório do dia), que já
+ * dispara a janela "Imprimir / Salvar PDF". Leva na URL o período e os filtros atuais da tabela
+ * de instituições, para o PDF sair com os mesmos dados da tela.
  */
-const fetchAllInstitutions = async () => {
-  const all = []
-  let page = 1
-  let totalPages = 1
+const exportOverview = () => {
+  const { search, status, plan, sort } = institutionsQuery.value
+  const query = { period: period.value }
 
-  do {
-    const data = getData(await adminOverviewApi.getInstitutions({ ...institutionsQuery.value, page, perPage: 100 }))
-
-    all.push(...(data?.items ?? []))
-    totalPages = data?.totalPages ?? 1
-    page++
-  } while (page <= totalPages)
-
-  return all
-}
-
-/**
- * Botão de exportar: baixa um CSV (abre no Excel) com os indicadores e gráficos do período escolhido
- * e a lista completa de instituições com os filtros aplicados na tabela.
- */
-const exportOverview = async () => {
-  if (exporting.value)
-    return
-
-  exporting.value = true
-  try {
-    const allInstitutions = await fetchAllInstitutions()
-    const periodLabel = periods.find(option => option.value === period.value)?.title ?? period.value
-
-    const csv = buildCsv(buildOverviewSections({
-      periodLabel,
-      kpis: kpis.value,
-      revenueTrend: revenueTrend.value,
-      movement: movement.value,
-      byPlan: byPlan.value,
-      statusData: statusData.value,
-      institutions: allInstitutions,
-      statusMeta: SUBSCRIPTION_STATUS_META,
-    }))
-
-    const today = new Date().toLocaleDateString('sv-SE')
-
-    downloadCsv(csv, `painel-administrativo-${period.value}-${today}.csv`)
-    toast.success('Exportação concluída.')
-  } catch (error) {
-    console.error('Erro ao exportar o painel administrativo:', error)
-    toast.error('Não foi possível exportar o painel. Tente novamente.')
-  } finally {
-    exporting.value = false
+  if (search)
+    query.search = search
+  if (status)
+    query.status = status
+  if (plan) {
+    query.plan = plan
+    query.planName = plans.value.find(item => String(item.id) === String(plan))?.name ?? ''
   }
+  if (sort)
+    query.sort = sort
+
+  router.push({ name: 'admin-overview-print', query })
 }
 
 // Ao abrir a tela, carrega os planos e todo o painel e inicia um relógio que atualiza o "atualizado há X min" a cada 30 s.
@@ -493,7 +457,6 @@ onUnmounted(() => {
               variant="tonal"
               color="secondary"
               prepend-icon="mdi-tray-arrow-down"
-              :loading="exporting"
               :disabled="anyLoading"
               @click="exportOverview"
             >

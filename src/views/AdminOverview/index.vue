@@ -1,5 +1,6 @@
 <script setup>
 import { adminOverviewApi, formatRenewalText, SUBSCRIPTION_STATUS_META } from '@/api/admin-overview-api'
+import { buildCsv, buildOverviewSections, downloadCsv } from '@/utils/adminOverviewExport'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { toast } from 'vue3-toastify'
 import InstitutionsTable from './InstitutionsTable.vue'
@@ -20,6 +21,9 @@ const now = ref(Date.now())
 
 let clockTimer = null
 
+/**
+ * Retorna os indicadores (KPIs) zerados, usados como valor inicial antes de a API responder.
+ */
 const defaultKpis = () => ({
   revenue: { value: 0, prev: 0, change_pct: null },
   active_subscriptions: { value: 0, net_change: 0, trials: 0 },
@@ -59,6 +63,10 @@ const institutionsPagination = ref({ page: 1, totalPages: 1, count: 0, perPage: 
 // Planos reais carregados do backend (usados no filtro da tabela de instituições).
 const plans = ref([])
 
+// Fica true enquanto o CSV da exportação está sendo montado.
+const exporting = ref(false)
+
+// Fica true enquanto qualquer bloco do painel (KPIs, gráficos ou tabela) ainda está carregando.
 const anyLoading = computed(() =>
   kpisLoading.value
   || revenueTrendLoading.value
@@ -68,11 +76,23 @@ const anyLoading = computed(() =>
   || institutionsLoading.value,
 )
 
+// Minutos desde a última atualização do painel (o relógio `now` é atualizado a cada 30 s).
 const minutesSinceUpdate = computed(() => Math.max(Math.round((now.value - lastUpdatedAt.value.getTime()) / 60000), 0))
 
+/**
+ * Formata um valor como moeda brasileira (ex.: R$ 1.234,56); vazio vira R$ 0,00.
+ */
 const formatCurrency = value => Number(value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+/**
+ * Formata um número no padrão brasileiro (separador de milhar com ponto); vazio vira 0.
+ */
 const formatNumber = value => Number(value ?? 0).toLocaleString('pt-BR')
 
+/**
+ * Monta ícone, cor e texto da comparação percentual com o período anterior
+ * (seta para cima/verde se cresceu, para baixo/vermelha se caiu, traço se não há dado).
+ */
 const trendMeta = changePct => {
   if (changePct === null || changePct === undefined)
     return { icon: 'mdi-minus', color: 'secondary', text: '— vs. período anterior' }
@@ -86,6 +106,10 @@ const trendMeta = changePct => {
   }
 }
 
+/**
+ * Monta ícone, cor e texto da variação líquida de assinaturas no período
+ * (ex.: "+3 no período"); se a variação for zero, mostra "Estável no período".
+ */
 const netChangeMeta = netChange => {
   if (!netChange)
     return { icon: 'mdi-minus', color: 'secondary', text: 'Estável no período' }
@@ -99,6 +123,7 @@ const netChangeMeta = netChange => {
   }
 }
 
+// Cards principais do topo (faturamento, assinaturas ativas, novas assinaturas e idosos gerenciados) montados a partir dos KPIs.
 const mainCards = computed(() => [
   {
     key: 'revenue',
@@ -135,6 +160,7 @@ const mainCards = computed(() => [
   },
 ])
 
+// Cards secundários (doses do mês, instituições em trial, adesão média e cuidadores ativos) montados a partir dos KPIs.
 const secondaryCards = computed(() => [
   {
     key: 'doses_this_month',
@@ -167,8 +193,16 @@ const secondaryCards = computed(() => [
   },
 ])
 
+/**
+ * Extrai o conteúdo útil da resposta do axios: usa `data.data` quando a API
+ * embrulha o retorno e, se não houver, o próprio `data`.
+ */
 const getData = response => response?.data?.data ?? response?.data
 
+/**
+ * Busca os indicadores do período selecionado (GET /AdminOverview/Kpis?period=...).
+ * Em caso de erro, guarda a mensagem para exibir no lugar dos cards.
+ */
 const loadKpis = async () => {
   kpisLoading.value = true
   kpisError.value = ''
@@ -184,6 +218,9 @@ const loadKpis = async () => {
   }
 }
 
+/**
+ * Busca a série de faturamento do período para o gráfico de evolução (GET /AdminOverview/RevenueTrend).
+ */
 const loadRevenueTrend = async () => {
   revenueTrendLoading.value = true
   revenueTrendError.value = ''
@@ -199,6 +236,9 @@ const loadRevenueTrend = async () => {
   }
 }
 
+/**
+ * Busca as novas assinaturas e cancelamentos do período para o gráfico de movimento (GET /AdminOverview/SubscriptionMovement).
+ */
 const loadMovement = async () => {
   movementLoading.value = true
   movementError.value = ''
@@ -214,6 +254,9 @@ const loadMovement = async () => {
   }
 }
 
+/**
+ * Busca o faturamento agrupado por plano no período (GET /AdminOverview/RevenueByPlan).
+ */
 const loadByPlan = async () => {
   byPlanLoading.value = true
   byPlanError.value = ''
@@ -229,6 +272,10 @@ const loadByPlan = async () => {
   }
 }
 
+/**
+ * Busca a quantidade de assinaturas por situação (ativa, trial, inadimplente, cancelando)
+ * para o gráfico de rosca (GET /AdminOverview/SubscriptionStatus). Não depende do período.
+ */
 const loadStatus = async () => {
   statusLoading.value = true
   statusError.value = ''
@@ -244,6 +291,12 @@ const loadStatus = async () => {
   }
 }
 
+/**
+ * Busca uma página da tabela de instituições (GET /AdminOverview/Institutions) com os filtros atuais
+ * (busca, situação, plano e ordenação). Acrescenta a cada linha o badge da situação e o texto de renovação
+ * e atualiza a paginação com o que o backend devolveu.
+ * @param {number} page Página a carregar (padrão: a página atual).
+ */
 const loadInstitutions = async (page = institutionsPagination.value.page) => {
   institutionsLoading.value = true
   institutionsError.value = ''
@@ -276,6 +329,10 @@ const loadInstitutions = async (page = institutionsPagination.value.page) => {
   }
 }
 
+/**
+ * Busca os planos cadastrados (GET /AdminOverview/Plans) para o filtro da tabela de instituições.
+ * Em caso de erro, apenas registra no console.
+ */
 const loadPlans = async () => {
   try {
     const response = await adminOverviewApi.getPlans()
@@ -286,6 +343,10 @@ const loadPlans = async () => {
   }
 }
 
+/**
+ * Recebe os filtros emitidos pela tabela (busca, situação, plano), guarda-os mantendo a ordenação
+ * e recarrega a tabela a partir da página 1.
+ */
 const onInstitutionsSearch = filters => {
   institutionsQuery.value = {
     ...institutionsQuery.value,
@@ -296,8 +357,16 @@ const onInstitutionsSearch = filters => {
   loadInstitutions(1)
 }
 
+/**
+ * Recarrega a tabela de instituições na página escolhida pelo usuário.
+ */
 const onInstitutionsPageChange = page => loadInstitutions(page)
 
+/**
+ * Atualiza o painel inteiro: marca o horário da atualização e recarrega em paralelo KPIs, gráficos
+ * e a primeira página de instituições. Usa allSettled para que a falha de um bloco não impeça os outros.
+ * É chamada ao abrir a tela, ao trocar o período e no botão de atualizar.
+ */
 const loadAll = async () => {
   lastUpdatedAt.value = new Date()
   now.value = Date.now()
@@ -312,10 +381,64 @@ const loadAll = async () => {
   ])
 }
 
-const exportOverview = () => {
-  toast.warning('A exportação estará disponível quando a integração com o backend for concluída.')
+/**
+ * Busca TODAS as instituições que atendem aos filtros atuais da tabela (busca, situação, plano),
+ * percorrendo as páginas de GET /AdminOverview/Institutions de 100 em 100.
+ * @returns {Promise<object[]>}
+ */
+const fetchAllInstitutions = async () => {
+  const all = []
+  let page = 1
+  let totalPages = 1
+
+  do {
+    const data = getData(await adminOverviewApi.getInstitutions({ ...institutionsQuery.value, page, perPage: 100 }))
+
+    all.push(...(data?.items ?? []))
+    totalPages = data?.totalPages ?? 1
+    page++
+  } while (page <= totalPages)
+
+  return all
 }
 
+/**
+ * Botão de exportar: baixa um CSV (abre no Excel) com os indicadores e gráficos do período escolhido
+ * e a lista completa de instituições com os filtros aplicados na tabela.
+ */
+const exportOverview = async () => {
+  if (exporting.value)
+    return
+
+  exporting.value = true
+  try {
+    const allInstitutions = await fetchAllInstitutions()
+    const periodLabel = periods.find(option => option.value === period.value)?.title ?? period.value
+
+    const csv = buildCsv(buildOverviewSections({
+      periodLabel,
+      kpis: kpis.value,
+      revenueTrend: revenueTrend.value,
+      movement: movement.value,
+      byPlan: byPlan.value,
+      statusData: statusData.value,
+      institutions: allInstitutions,
+      statusMeta: SUBSCRIPTION_STATUS_META,
+    }))
+
+    const today = new Date().toLocaleDateString('sv-SE')
+
+    downloadCsv(csv, `painel-administrativo-${period.value}-${today}.csv`)
+    toast.success('Exportação concluída.')
+  } catch (error) {
+    console.error('Erro ao exportar o painel administrativo:', error)
+    toast.error('Não foi possível exportar o painel. Tente novamente.')
+  } finally {
+    exporting.value = false
+  }
+}
+
+// Ao abrir a tela, carrega os planos e todo o painel e inicia um relógio que atualiza o "atualizado há X min" a cada 30 s.
 onMounted(() => {
   loadPlans()
   loadAll()
@@ -324,6 +447,7 @@ onMounted(() => {
   }, 30000)
 })
 
+// Ao sair da tela, para o relógio de 30 s.
 onUnmounted(() => {
   if (clockTimer)
     clearInterval(clockTimer)
@@ -369,6 +493,8 @@ onUnmounted(() => {
               variant="tonal"
               color="secondary"
               prepend-icon="mdi-tray-arrow-down"
+              :loading="exporting"
+              :disabled="anyLoading"
               @click="exportOverview"
             >
               Exportar

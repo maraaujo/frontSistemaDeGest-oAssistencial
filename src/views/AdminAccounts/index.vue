@@ -176,6 +176,8 @@ import { toast } from 'vue3-toastify'
 
 const router = useRouter()
 const currentUser = auth.getUserStorage()
+
+// Indica se o usuário logado é admin da plataforma (conta sem institutionId).
 const isPlatformAdmin = computed(() => currentUser?.institutionId === null)
 const loading = ref(false)
 const loadingInstitutions = ref(false)
@@ -203,8 +205,23 @@ const emailRules = [...requiredRules, value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test
 const passwordRules = [value => !value || String(value).length >= 8 || 'A senha deve ter pelo menos 8 caracteres']
 const model = ref({ id: 0, nome: '', email: '', userType: '', institutionId: null, password: '' })
 
+/**
+ * Extrai o conteúdo útil da resposta do axios: usa `data.data` quando a API
+ * embrulha o retorno e, se não houver, o próprio `data`.
+ */
 const responseData = response => response?.data?.data ?? response?.data
+
+/**
+ * Garante que o retorno vire um array: aceita a lista direta ou uma lista dentro de
+ * loginAccounts, accounts, institutions, items ou $values; caso contrário, devolve [].
+ */
 const extractList = data => Array.isArray(data) ? data : data?.loginAccounts ?? data?.accounts ?? data?.institutions ?? data?.items ?? data?.$values ?? []
+
+/**
+ * Monta a mensagem de erro para exibir ao usuário a partir de um erro do axios ou do corpo da resposta.
+ * Procura, nesta ordem, errorMessage, message, title, a primeira mensagem de validação (errors)
+ * e a mensagem do próprio erro; se nada for encontrado, usa o texto de fallback.
+ */
 const apiMessage = (source, fallback) => {
   const body = source?.response?.data ?? source?.data ?? source
   const validationMessages = body?.errors && typeof body.errors === 'object'
@@ -213,12 +230,22 @@ const apiMessage = (source, fallback) => {
 
   return body?.errorMessage ?? body?.message ?? body?.title ?? validationMessages[0] ?? source?.message ?? fallback
 }
+
+/**
+ * Verifica se a API respondeu com sucesso mesmo quando o status HTTP é 200:
+ * se o corpo trouxer success/isOk/succeeded igual a false, lança um erro com a mensagem da API (ou o fallback).
+ */
 const ensureSuccessfulResponse = (response, fallback) => {
   const body = response?.data
 
   if (body?.success === false || body?.isOk === false || body?.succeeded === false)
     throw new Error(apiMessage(body, fallback))
 }
+
+/**
+ * Padroniza uma conta vinda da API para o formato usado na tabela, aceitando nomes de campos
+ * alternativos (ex.: nome/name, tipoUsuario/userType, idInstitution/institutionId).
+ */
 const normalizeAccount = item => ({
   ...item,
   id: Number(item.id ?? item.idLoginAccount ?? item.loginAccountId),
@@ -229,11 +256,16 @@ const normalizeAccount = item => ({
   institutionName: item.institutionName ?? item.institution?.name ?? '',
 })
 
+/**
+ * Retorna o nome da instituição pelo id: "Administração geral" para id vazio ou 0,
+ * o nome encontrado na lista carregada ou "Instituição #id" quando não encontrada.
+ */
 const institutionLabel = id => {
   if (id === null || id === undefined || Number(id) === 0) return 'Administração geral'
   return institutions.value.find(item => Number(item.id) === Number(id))?.name ?? `Instituição #${id}`
 }
 
+// Lista de contas filtrada pelo texto da busca (nome, e-mail, tipo de usuário ou instituição), sem diferenciar maiúsculas.
 const filteredAccounts = computed(() => {
   const term = search.value?.trim().toLocaleLowerCase('pt-BR')
   if (!term) return accounts.value
@@ -241,6 +273,10 @@ const filteredAccounts = computed(() => {
     .some(value => String(value ?? '').toLocaleLowerCase('pt-BR').includes(term)))
 })
 
+/**
+ * Busca todas as contas de acesso (GET /LoginAccount/GetAllLoginAccounts) e as normaliza para a tabela.
+ * Em caso de erro, mostra um aviso.
+ */
 const loadAccounts = async () => {
   loading.value = true
   try {
@@ -253,6 +289,12 @@ const loadAccounts = async () => {
   }
 }
 
+/**
+ * Carrega as instituições usadas no seletor e nos nomes da tabela.
+ * Usuário de instituição: busca só a própria (GET /Institution/GetInstitutionById).
+ * Admin da plataforma: busca todas (GET /Institution/GetAllInstitutions) e adiciona "Administração geral" (id 0).
+ * Em caso de erro, apenas registra no console (sem aviso na tela).
+ */
 const loadInstitutions = async () => {
   loadingInstitutions.value = true
   try {
@@ -272,6 +314,10 @@ const loadInstitutions = async () => {
   }
 }
 
+/**
+ * Abre o diálogo de edição preenchido com os dados da conta escolhida.
+ * A senha começa vazia (só é alterada se for digitada uma nova).
+ */
 const openEdit = item => {
   selectedAccount.value = item
   model.value = {
@@ -285,6 +331,9 @@ const openEdit = item => {
   editDialog.value = true
 }
 
+/**
+ * Fecha o diálogo de edição (exceto enquanto está salvando), esconde a senha e limpa as mensagens de validação.
+ */
 const closeEdit = () => {
   if (saving.value) return
   editDialog.value = false
@@ -292,6 +341,11 @@ const closeEdit = () => {
   formRef.value?.resetValidation()
 }
 
+/**
+ * Valida o formulário e atualiza a conta (PUT /LoginAccount/Update/{id}).
+ * Envia nome, e-mail em minúsculas, tipo de usuário e instituição; a senha só vai no envio se foi preenchida.
+ * Usuário que não é admin da plataforma sempre envia a própria instituição. Depois recarrega a lista.
+ */
 const saveAccount = async () => {
   if (saving.value) return
 
@@ -324,11 +378,17 @@ const saveAccount = async () => {
   }
 }
 
+/**
+ * Guarda a conta escolhida e abre o diálogo de confirmação de exclusão.
+ */
 const openDelete = item => {
   selectedAccount.value = item
   deleteDialog.value = true
 }
 
+/**
+ * Exclui a conta selecionada (DELETE /LoginAccount/DeleteLoginAccount/{id}), fecha o diálogo e recarrega a lista.
+ */
 const removeAccount = async () => {
   if (!selectedAccount.value?.id || deleting.value) return
   deleting.value = true
@@ -347,6 +407,7 @@ const removeAccount = async () => {
   }
 }
 
+// Ao abrir a tela, carrega instituições e contas de acesso ao mesmo tempo.
 onMounted(async () => {
   await Promise.all([loadInstitutions(), loadAccounts()])
 })

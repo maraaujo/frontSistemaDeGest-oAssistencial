@@ -11,10 +11,15 @@ const forgetPasswordForm = ref()
 const theme = useTheme()
 const email = ref('')
 
+// Imagem de fundo da tela conforme o tema atual (versão escura ou clara).
 const authBgThemeVariant = computed(() => {
   return theme.current.value.dark ? authBgDark : authBgLight
 })
 
+/**
+ * Valida o e-mail digitado e mostra um aviso orientando a procurar o administrador da instituição.
+ * Não chama nenhuma API nem envia e-mail de redefinição.
+ */
 const submit = async () => {
   const { valid } = await forgetPasswordForm.value.validate()
   if (!valid)

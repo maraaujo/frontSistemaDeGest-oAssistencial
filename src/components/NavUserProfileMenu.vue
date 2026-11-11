@@ -6,6 +6,10 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const user = ref({})
 
+/**
+ * Letra exibida no avatar quando não há foto: primeira letra do nome (ou do e-mail),
+ * em maiúscula; "?" se nenhum dos dois existir.
+ */
 const initials = computed(() => {
   const source = user.value.name || user.value.email || ''
   
@@ -16,13 +20,17 @@ const menuItems = [
   { title: 'Meu perfil', icon: 'mdi-account-outline', to: '/profile' },
 ]
 
+/** Navega para a rota do item clicado no menu do avatar (ex.: '/profile'). */
 const goTo = to => router.push(to)
 
+/** Sai do sistema: apaga a sessão do sessionStorage (auth.logOut) e vai para o login. */
 const doLogout = () => {
   auth.logOut()
   router.push('/login')
 }
 
+// Ao montar o componente, carrega o usuário logado da sessão (nome, e-mail, avatar)
+// para exibir no menu; sem sessão, usa um objeto vazio.
 onMounted(() => {
   const result = auth.getUserStorage()
 

@@ -636,6 +636,10 @@ const medicineHeaders = [
   { title: '', key: 'actions', sortable: false },
 ]
 
+/**
+ * Cria um responsável vazio (id 0) já vinculado ao acolhido da rota,
+ * usado como linha nova na etapa "Responsáveis".
+ */
 const newResponsible = () => ({
   id: 0,
   patientId: Number(route.params.id),
@@ -682,8 +686,15 @@ const medicineForm = ref({
   observations: '',
 })
 
+/**
+ * Extrai o conteúdo útil da resposta da API (`data.data`, senão `data`).
+ */
 const getData = response => response?.data?.data ?? response?.data
 
+/**
+ * Normaliza o valor para array: aceita array puro, o formato `$values` do .NET
+ * ou um objeto único (vira array de um item); vazio vira [].
+ */
 const getList = value => {
   if (Array.isArray(value))
     return value
@@ -694,6 +705,10 @@ const getList = value => {
   return value ? [value] : []
 }
 
+/**
+ * Converte uma data vinda da API para o formato "aaaa-mm-dd" aceito pelo
+ * input de data; se não for uma data válida, usa os 10 primeiros caracteres do texto.
+ */
 const formatDateInput = value => {
   if (!value)
     return ''
@@ -706,6 +721,10 @@ const formatDateInput = value => {
   return date.toISOString().slice(0, 10)
 }
 
+/**
+ * Converte um horário em texto para "HH:mm" (formato do input de hora),
+ * ex.: "08:00:00" vira "08:00"; vazio vira ''.
+ */
 const formatTimeInput = value => {
   if (!value)
     return ''
@@ -716,16 +735,26 @@ const formatTimeInput = value => {
   return value
 }
 
+/**
+ * Avança para a próxima etapa da edição (sem validar o formulário), se não estiver na última.
+ */
 const goNext = () => {
   if (currentStep.value < steps.length)
     currentStep.value += 1
 }
 
+/**
+ * Volta para a etapa anterior da edição, se não estiver na primeira.
+ */
 const goBack = () => {
   if (currentStep.value > 1)
     currentStep.value -= 1
 }
 
+/**
+ * Busca os tipos sanguíneos na API e preenche as opções do select ({ id, title }).
+ * Em caso de erro, preenche `loadError`.
+ */
 const loadBloodTypes = async () => {
   try {
     const items = getList(getData(await bloodTypesApi.getAll()))
@@ -740,6 +769,10 @@ const loadBloodTypes = async () => {
   }
 }
 
+/**
+ * Busca todas as condições clínicas cadastradas e preenche as opções ({ id, name })
+ * para adicionar ao acolhido. Em caso de erro, preenche `loadError`.
+ */
 const loadClinicalConditionOptions = async () => {
   try {
     const items = getList(getData(await clinicalConditionsApi.getAll()))
@@ -754,6 +787,10 @@ const loadClinicalConditionOptions = async () => {
   }
 }
 
+/**
+ * Busca os medicamentos cadastrados e preenche as opções ({ id, name }) da
+ * etapa "Medicamentos". Em caso de erro, preenche `loadError`.
+ */
 const loadMedicineOptions = async () => {
   try {
     const items = getList(getData(await medicinesApi.getAll()))
@@ -768,6 +805,10 @@ const loadMedicineOptions = async () => {
   }
 }
 
+/**
+ * Busca os funcionários e preenche as opções ({ id, name }) do responsável pela
+ * administração do medicamento. Em caso de erro, preenche `loadError`.
+ */
 const loadEmployeeOptions = async () => {
   try {
     const items = getList(getData(await employeesApi.getAll()))
@@ -782,6 +823,12 @@ const loadEmployeeOptions = async () => {
   }
 }
 
+/**
+ * Busca os detalhes do acolhido da rota (`patientsApi.getPatientDetails`) e preenche
+ * o formulário: dados pessoais (CPF e telefone com máscara, datas no formato do input),
+ * responsáveis e medicamentos programados. Os medicamentos carregados recebem `id: 0`.
+ * Em erro, preenche `loadError`.
+ */
 const loadPatient = async () => {
   try {
     const id = route.params.id
@@ -792,6 +839,7 @@ const loadPatient = async () => {
     model.value.id = Number(patient.id ?? id)
     model.value.name = patient.name ?? ''
     model.value.document = patient.document ?? ''
+
     // O backend agora armazena CPF/telefone só com dígitos; exibe com máscara.
     model.value.phone = formatPhone(patient.phone ?? '')
     model.value.bloodTypeId = Number(bloodType?.id ?? patient.bloodTypeId ?? patient.idBloodType) || null
@@ -831,6 +879,11 @@ const loadPatient = async () => {
   }
 }
 
+/**
+ * Busca as condições clínicas já vinculadas ao acolhido
+ * (`patientClinicalConditionsApi.getByPatientId`) e preenche a lista do formulário.
+ * Em erro, apenas registra no console.
+ */
 const loadPatientClinicalConditions = async () => {
   try {
     const id = route.params.id
@@ -848,9 +901,22 @@ const loadPatientClinicalConditions = async () => {
   }
 }
 
+/**
+ * Adiciona um responsável em branco à lista de responsáveis do acolhido.
+ */
 const addResponsible = () => model.value.responsibles.push(newResponsible())
+
+/**
+ * Remove da lista o responsável na posição informada.
+ * @param {number} index Posição do responsável na lista.
+ */
 const removeResponsible = index => model.value.responsibles.splice(index, 1)
 
+/**
+ * Adiciona a condição clínica selecionada (com data de diagnóstico e observações)
+ * à lista local e limpa os campos. Avisa se nenhuma condição foi escolhida.
+ * Nada é enviado à API aqui; o envio acontece no `submit`.
+ */
 const addClinicalCondition = () => {
   if (!selectedClinicalCondition.value) {
     toast.warning('Selecione uma condição clínica.')
@@ -872,8 +938,17 @@ const addClinicalCondition = () => {
   conditionForm.value = { diagnosisDate: '', observations: '' }
 }
 
+/**
+ * Remove da lista local a condição clínica na posição informada.
+ * @param {number} index Posição da condição na lista.
+ */
 const removeClinicalCondition = index => model.value.clinicalConditions.splice(index, 1)
 
+/**
+ * Adiciona à lista local um medicamento programado (medicamento, condição clínica
+ * relacionada, dosagem, frequência, horário, responsável e período) e limpa o formulário.
+ * Exige medicamento e condição clínica selecionados; o envio à API ocorre no `submit`.
+ */
 const addScheduledMedicine = () => {
   if (!selectedMedicine.value) {
     toast.warning('Selecione um medicamento.')
@@ -919,10 +994,23 @@ const addScheduledMedicine = () => {
   }
 }
 
+/**
+ * Remove da lista local o medicamento programado na posição informada.
+ * @param {number} index Posição do medicamento na lista.
+ */
 const removeScheduledMedicine = index => model.value.scheduledMedicines.splice(index, 1)
 
+/**
+ * Cancela a edição e volta para a tela de detalhes do acolhido, sem salvar.
+ */
 const cancel = () => router.push({ name: 'patient-details', params: { id: model.value.id || route.params.id } })
 
+/**
+ * Valida o formulário e, se válido, monta o payload completo do acolhido
+ * (dados, responsáveis, condições clínicas e medicamentos, com datas em ISO e
+ * horário em HH:mm:ss) e envia para `patientsApi.update`. Se der certo, mostra
+ * toast e volta para os detalhes; se a validação falhar, volta para a etapa 1.
+ */
 const submit = async () => {
   const validation = await formRef.value?.validate()
 
@@ -997,6 +1085,7 @@ const submit = async () => {
   }
 }
 
+// Ao abrir a tela, carrega em paralelo as opções dos selects, os dados do acolhido e suas condições clínicas.
 onMounted(async () => {
   loading.value = true
   loadingOptions.value = true

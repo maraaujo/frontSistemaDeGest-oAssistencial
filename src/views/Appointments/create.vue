@@ -33,9 +33,23 @@ const employees = ref([])
 const statusOptions = ['Pendente', 'Confirmado', 'Realizado', 'Cancelado']
 const requiredRules = [value => !!value || 'Este campo é obrigatório']
 const model = ref({ patientId: null, responsible: null, appointmentType: '', dateTime: '', description: '', status: 'Pendente', observations: '' })
+
+/**
+ * Extrai o conteúdo útil da resposta do axios: usa `data.data` quando a API
+ * embrulha o retorno e, se não houver, o próprio `data`.
+ */
 const getData = response => response?.data?.data ?? response?.data
+
+/**
+ * Garante que o retorno vire um array: aceita a lista direta ou uma lista dentro da chave informada,
+ * de items ou de $values; caso contrário, devolve [].
+ */
 const getList = (data, key) => Array.isArray(data) ? data : data?.[key] ?? data?.items ?? data?.$values ?? []
 
+/**
+ * Carrega em paralelo pacientes (patientsApi.getAll) e funcionários (employeesApi.getAll)
+ * para preencher os campos de seleção do formulário. Mostra um aviso se falhar.
+ */
 const loadOptions = async () => {
   loadingOptions.value = true
   try {
@@ -48,6 +62,12 @@ const loadOptions = async () => {
   } finally { loadingOptions.value = false }
 }
 
+/**
+ * Valida o formulário e cadastra o agendamento (POST /Appointment/CreateAppointment).
+ * Envia os dados do formulário com o userId do usuário logado, a data/hora convertida para ISO (UTC)
+ * e os textos sem espaços nas pontas. O responsável vai como o NOME do funcionário escolhido.
+ * Em caso de sucesso, volta para a lista de agendamentos.
+ */
 const submit = async () => {
   const { valid } = await formRef.value.validate()
   if (!valid) return
@@ -65,5 +85,6 @@ const submit = async () => {
   } finally { saving.value = false }
 }
 
+// Ao abrir a tela, carrega pacientes e funcionários para os campos de seleção.
 onMounted(loadOptions)
 </script>

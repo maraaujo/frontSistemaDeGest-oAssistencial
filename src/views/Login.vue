@@ -119,6 +119,11 @@ const loginData = ref({
   password: "",
 });
 
+/**
+ * Faz o login: se o formulário estiver válido, chama auth.logIn (POST /LoginAccount/Login), que guarda
+ * o usuário e o token na sessão. Se não autorizar, mostra a mensagem de acesso negado; se autorizar,
+ * vai para a rota do parâmetro ?redirect= ou, por padrão, para /patient-reminders.
+ */
 const submit = async () => {
   if (!valid.value) {
     return;

@@ -106,6 +106,10 @@ const employees = ref([])
 const deleteDialog = ref(false)
 const selectedItem = ref(null)
 const statusOptions = ['Pendente', 'Confirmado', 'Realizado', 'Cancelado']
+
+/**
+ * Retorna os filtros da listagem zerados (paciente, funcionário, status e intervalo de datas).
+ */
 const emptyFilters = () => ({ patientId: null, employeeId: null, status: null, startDate: '', endDate: '' })
 const filters = ref(emptyFilters())
 
@@ -120,19 +124,41 @@ const headers = [
   { title: 'Ações', key: 'actions', sortable: false },
 ]
 
+/**
+ * Extrai o conteúdo útil da resposta do axios (`data.data` ou `data`); se não houver nada, devolve [].
+ */
 const dataOf = response => response?.data?.data ?? response?.data ?? []
+
+/**
+ * Garante que o retorno vire um array: aceita a lista direta, a primeira chave da lista `keys`
+ * que contenha um array, ou items/$values; caso contrário, devolve [].
+ */
 const listOf = (data, keys = []) => {
   if (Array.isArray(data)) return data
   for (const key of keys) if (Array.isArray(data?.[key])) return data[key]
   return data?.items ?? data?.$values ?? []
 }
+
+/**
+ * Padroniza um agendamento vindo da API para a tabela: define patientName, employeeName
+ * (a partir de responsible ou campos equivalentes) e dateTime, aceitando nomes de campos alternativos.
+ */
 const normalize = item => ({ ...item, patientName: item.patientName ?? item.namePatient ?? '', employeeName: item.responsible ?? item.employeeName ?? item.responsibleEmployeeName ?? '', dateTime: item.dateTime ?? item.appointmentDate ?? item.date ?? item.scheduledDateTime })
 
+/**
+ * Carrega pacientes e funcionários para os filtros. Usa allSettled: se uma das chamadas falhar,
+ * a outra lista ainda é preenchida e nenhum aviso é exibido.
+ */
 const loadOptions = async () => {
   const [patientResult, employeeResult] = await Promise.allSettled([patientsApi.getAll(), employeesApi.getAll()])
   if (patientResult.status === 'fulfilled') patients.value = listOf(dataOf(patientResult.value), ['patients'])
   if (employeeResult.status === 'fulfilled') employees.value = listOf(dataOf(employeeResult.value), ['employees'])
 }
+
+/**
+ * Busca os agendamentos com os filtros atuais (POST /Appointment/GetPagedAppointmentByFilter)
+ * e normaliza cada item para a tabela. Em caso de erro, esvazia a lista e mostra um aviso.
+ */
 const loadAppointments = async () => {
   loading.value = true
   try {
@@ -144,9 +170,26 @@ const loadAppointments = async () => {
     toast.error('Não foi possível carregar os agendamentos.')
   } finally { loading.value = false }
 }
+
+/**
+ * Botão "Pesquisar": recarrega a lista aplicando os filtros preenchidos.
+ */
 const search = () => loadAppointments()
+
+/**
+ * Limpa todos os filtros e recarrega a lista completa.
+ */
 const clearFilters = () => { filters.value = emptyFilters(); loadAppointments() }
+
+/**
+ * Abre a tela de edição do agendamento escolhido (rota appointments-update).
+ */
 const editItem = item => router.push({ name: 'appointments-update', params: { id: item.id } })
+
+/**
+ * Cancela o agendamento sem excluí-lo: reenvia o item com status "Cancelado"
+ * (PUT /Appointment/Update/{id}) e recarrega a lista.
+ */
 const cancelItem = async item => {
   try {
     const response = await appointmentsApi.update(item.id, { ...item, status: 'Cancelado' })
@@ -155,7 +198,15 @@ const cancelItem = async item => {
   }
   catch (error) { console.error(error); toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível cancelar o agendamento.') }
 }
+
+/**
+ * Guarda o agendamento escolhido e abre o diálogo de confirmação de exclusão.
+ */
 const confirmRemove = item => { selectedItem.value = item; deleteDialog.value = true }
+
+/**
+ * Exclui o agendamento selecionado (DELETE /Appointment/DeleteAppointment/{id}), fecha o diálogo e recarrega a lista.
+ */
 const removeItem = async () => {
   deleting.value = true
   try {
@@ -166,7 +217,17 @@ const removeItem = async () => {
   catch (error) { console.error(error); toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível excluir o agendamento.') }
   finally { deleting.value = false }
 }
+
+/**
+ * Formata data/hora no padrão brasileiro (dd/mm/aaaa hh:mm:ss); sem valor, mostra "-".
+ */
 const formatDateTime = value => value ? new Date(value).toLocaleString('pt-BR') : '-'
+
+/**
+ * Cor do chip de status: Pendente = amarelo, Confirmado = azul, Realizado = verde, Cancelado = vermelho.
+ */
 const getStatusColor = status => ({ Pendente: 'warning', Confirmado: 'info', Realizado: 'success', Cancelado: 'error' }[status] ?? 'secondary')
+
+// Ao abrir a tela, carrega as opções dos filtros e a lista de agendamentos.
 onMounted(() => { loadOptions(); loadAppointments() })
 </script>

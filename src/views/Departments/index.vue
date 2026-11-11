@@ -231,6 +231,9 @@ const headers = [
 
 const requiredRules = [value => Boolean(String(value ?? '').trim()) || 'Campo obrigatório']
 
+/**
+ * Retorna um departamento vazio (id 0 = cadastro novo) para o formulário.
+ */
 const emptyModel = () => ({
   id: 0,
   name: '',
@@ -238,11 +241,21 @@ const emptyModel = () => ({
 })
 
 const model = ref(emptyModel())
+
+// Indica se o diálogo está editando um departamento existente (id maior que 0) ou cadastrando um novo.
 const editing = computed(() => model.value.id > 0)
 
+/**
+ * Extrai o conteúdo útil da resposta do axios (`data.data` ou `data`); se não houver nada, devolve [].
+ */
 const getData = response => response?.data?.data ?? response?.data ?? []
+
+/**
+ * Garante que o retorno vire um array: aceita a lista direta ou uma lista dentro de items, data ou $values.
+ */
 const extractList = data => Array.isArray(data) ? data : data?.items ?? data?.data ?? data?.$values ?? []
 
+// Lista de departamentos filtrada pelo texto da busca (nome ou descrição), sem diferenciar maiúsculas.
 const filteredDepartments = computed(() => {
   const term = search.value?.trim().toLocaleLowerCase('pt-BR')
 
@@ -253,6 +266,9 @@ const filteredDepartments = computed(() => {
     .some(value => String(value ?? '').toLocaleLowerCase('pt-BR').includes(term)))
 })
 
+/**
+ * Busca todos os departamentos (GET /Department/GetAllDepartments) para a tabela. Mostra um aviso se falhar.
+ */
 const loadDepartments = async () => {
   loading.value = true
 
@@ -266,11 +282,17 @@ const loadDepartments = async () => {
   }
 }
 
+/**
+ * Abre o diálogo com o formulário vazio para cadastrar um novo departamento.
+ */
 const openCreate = () => {
   model.value = emptyModel()
   formDialog.value = true
 }
 
+/**
+ * Abre o diálogo preenchido com os dados do departamento escolhido para edição.
+ */
 const openEdit = item => {
   model.value = {
     id: Number(item.id),
@@ -280,6 +302,9 @@ const openEdit = item => {
   formDialog.value = true
 }
 
+/**
+ * Fecha o diálogo do formulário (exceto enquanto está salvando) e limpa as mensagens de validação.
+ */
 const closeForm = () => {
   if (saving.value)
     return
@@ -288,6 +313,11 @@ const closeForm = () => {
   formRef.value?.resetValidation()
 }
 
+/**
+ * Valida e salva o departamento: se estiver editando, chama PUT /Department/Update/{id};
+ * senão, POST /Department/CreateDepartment. Envia nome e descrição sem espaços nas pontas,
+ * fecha o diálogo e recarrega a tabela.
+ */
 const submit = async () => {
   const validation = await formRef.value?.validate()
 
@@ -322,11 +352,17 @@ const submit = async () => {
   }
 }
 
+/**
+ * Guarda o departamento escolhido e abre o diálogo de confirmação de exclusão.
+ */
 const openDelete = item => {
   selectedDepartment.value = item
   deleteDialog.value = true
 }
 
+/**
+ * Exclui o departamento selecionado (DELETE /Department/DeleteDepartment/{id}), fecha o diálogo e recarrega a tabela.
+ */
 const removeDepartment = async () => {
   if (!selectedDepartment.value?.id)
     return
@@ -350,5 +386,6 @@ const removeDepartment = async () => {
   }
 }
 
+// Ao abrir a tela, carrega a lista de departamentos.
 onMounted(loadDepartments)
 </script>

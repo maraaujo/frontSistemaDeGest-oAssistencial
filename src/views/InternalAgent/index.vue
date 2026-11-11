@@ -193,6 +193,10 @@ const quickQuestions = ref([
   'Resumo do dia.',
 ])
 
+/**
+ * Rola a área do chat até a última mensagem. Espera o próximo ciclo de renderização (nextTick)
+ * para que a mensagem recém-adicionada já esteja na tela.
+ */
 const scrollToBottom = () => {
   nextTick(() => {
     const el = chatBodyRef.value?.$el ?? chatBodyRef.value
@@ -202,8 +206,16 @@ const scrollToBottom = () => {
   })
 }
 
+/**
+ * Extrai o conteúdo útil da resposta do axios: usa `data.data` quando a API
+ * embrulha o retorno e, se não houver, o próprio `data`.
+ */
 const getData = response => response?.data?.data ?? response?.data
 
+/**
+ * Garante que o valor vire um array: devolve a lista direta, o conteúdo de $values,
+ * o próprio valor dentro de um array (se for um objeto único) ou [] se estiver vazio.
+ */
 const getList = value => {
   if (Array.isArray(value))
     return value
@@ -214,6 +226,10 @@ const getList = value => {
   return value ? [value] : []
 }
 
+/**
+ * Carrega os pacientes (patientsApi.getAll) para o seletor opcional de acolhido do chat.
+ * Em caso de erro, apenas registra no console (sem aviso na tela).
+ */
 const loadPatients = async () => {
   loadingPatients.value = true
 
@@ -226,6 +242,12 @@ const loadPatients = async () => {
   }
 }
 
+/**
+ * Envia a pergunta digitada ao assistente interno (POST /InternalAssistant/Ask).
+ * Mostra a pergunta no chat, limpa o campo e envia { patientId (opcional), question, referenceDate = agora }.
+ * Se a API responder com success, adiciona a resposta (body.data) ao chat; senão, mostra a mensagem de erro
+ * no chat e em um aviso. Ignora perguntas vazias ou envios enquanto outra resposta está carregando.
+ */
 const sendQuestion = async () => {
   const trimmedQuestion = question.value.trim()
 
@@ -271,6 +293,9 @@ const sendQuestion = async () => {
   }
 }
 
+/**
+ * Envia uma das perguntas prontas (botões de atalho): coloca o texto no campo e chama sendQuestion.
+ */
 const sendQuickQuestion = text => {
   if (loading.value)
     return
@@ -279,10 +304,14 @@ const sendQuickQuestion = text => {
   sendQuestion()
 }
 
+/**
+ * Limpa a conversa, deixando apenas a mensagem inicial de boas-vindas do assistente.
+ */
 const clearChat = () => {
   messages.value = [{ ...initialMessage }]
 }
 
+// Ao abrir a tela, carrega a lista de pacientes para o seletor.
 onMounted(() => {
   loadPatients()
 })

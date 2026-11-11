@@ -19,6 +19,13 @@ export const formatDate = value => {
 }
 
 // new Date() respeita o offset (-03:00) da string e o resultado é exibido no fuso local
+/**
+ * Formata uma data/hora ISO como HH:mm. Se value for vazio ou inválido, usa os 5 primeiros
+ * caracteres de fallback (ex.: administrationTime "08:00:00" -> "08:00") ou devolve "-".
+ * @param {string|null} value - data/hora ISO (ex.: scheduledDateTime)
+ * @param {string} [fallback] - horário alternativo no formato HH:mm:ss
+ * @returns {string}
+ */
 export const formatTime = (value, fallback) => {
   const date = value ? new Date(value) : null
 
@@ -28,6 +35,11 @@ export const formatTime = (value, fallback) => {
   return typeof fallback === 'string' ? fallback.substring(0, 5) : '-'
 }
 
+/**
+ * Cor do Vuetify para o chip de situação: "Administrado" = success (verde),
+ * "Atrasado" = error (vermelho), qualquer outra (ex.: "Pendente") = secondary.
+ * @returns {string}
+ */
 export const getStatusColor = status => {
   if (status === 'Administrado') return 'success'
   if (status === 'Atrasado') return 'error'
@@ -35,6 +47,12 @@ export const getStatusColor = status => {
   return 'secondary'
 }
 
+/**
+ * Extrai a lista de itens da resposta do relatório, aceitando vários formatos:
+ * ApiResponse (response.data.data), array direto, objeto com $values (serialização .NET)
+ * ou com items. Se nada servir, devolve lista vazia.
+ * @returns {Array<object>} itens no formato DailyMedicationReportItem (ver api/medication-administrations-api.js)
+ */
 export const getReportList = response => {
   const value = response?.data?.data ?? response?.data
 
@@ -44,6 +62,10 @@ export const getReportList = response => {
   return value?.$values ?? value?.items ?? []
 }
 
+/**
+ * Conta quantos itens há em cada situação. Situações fora das três conhecidas são ignoradas.
+ * @returns {{ Administrado: number, Atrasado: number, Pendente: number }}
+ */
 export const summarizeByStatus = items => items.reduce(
   (acc, item) => {
     if (item.status in acc)
@@ -55,6 +77,10 @@ export const summarizeByStatus = items => items.reduce(
 )
 
 // A resposta já vem ordenada por acolhido e horário; o agrupamento preserva essa ordem
+/**
+ * Agrupa os itens do relatório por acolhido (patientId), para exibir um bloco por pessoa.
+ * @returns {Array<{ patientId: number, patientName: string, items: Array }>}
+ */
 export const groupByPatient = items => {
   const groups = new Map()
 

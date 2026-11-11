@@ -17,9 +17,17 @@ const defaultUser = {
 const keySession = "tltkn";
 
 
+// Serviço de autenticação do front: faz o login na API e guarda a sessão do usuário
+// (token JWT + dados básicos) no sessionStorage, na chave "tltkn". Como é sessionStorage,
+// a sessão vale só para a aba atual e some ao fechá-la.
 export default {
   _user: { ...defaultUser },
 
+  /**
+   * Indica se há usuário logado: relê a sessão do sessionStorage, atualiza _user
+   * e devolve true se existir token. Usado pelo guard de rotas (router/index.js).
+   * @returns {boolean}
+   */
   loggedIn() {
     const user = this.getUserStorage();
     this._user = user ? { ...user } : { ...defaultUser };
@@ -27,6 +35,15 @@ export default {
   },
   
 
+/**
+ * Faz o login na API (POST /LoginAccount/Login). Em caso de sucesso, monta o usuário
+ * (id, e-mail, token, institutionId, menus etc.) aceitando nomes de campo alternativos,
+ * salva no sessionStorage e devolve { isOk: true, data }. Em falha (success false, sem
+ * token ou erro de rede) devolve { isOk: false, message } sem lançar exceção.
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<{ isOk: boolean, isAuthorized: boolean, data: object|null, message?: string }>}
+ */
 async logIn(email, password) {
   try {
     const ret = await loginAccountsApi.login({ email, password });
@@ -93,20 +110,31 @@ async logIn(email, password) {
   }
 },
 
+  /** Encerra a sessão: apaga os dados do sessionStorage e volta _user ao padrão vazio. Não chama a API. */
   logOut() {
     sessionStorage.removeItem(keySession);
     this._user = { ...defaultUser };
   },
 
+  /**
+   * Devolve a lista de menus que veio no login (salva na sessão).
+   * Atenção: se não houver sessão, getUserStorage devolve null e o acesso a .menus gera erro.
+   * @returns {Array}
+   */
   returnMenusAuthorized() {
     var user = this.getUserStorage();
     return user.menus;
+
     //os dados estão na memoria. 
     // getuser pega do LocalStorege 
 
 
   },
 
+  /**
+   * Obtém o usuário logado a partir do sessionStorage (não consulta a API).
+   * @returns {Promise<{ isOk: boolean, data?: object, message?: string }>} isOk false se não houver sessão
+   */
   async getUser() {
     if (!this.loggedIn()) {
       return { isOk: false, message: "Usuário não está logado." };
@@ -122,6 +150,10 @@ async logIn(email, password) {
     }
   },
 
+  /**
+   * Recuperação de senha — ainda não implementada: não chama a API e
+   * sempre devolve { isOk: true }.
+   */
   async resetPassword(email) {
     try {
       return { isOk: true };
@@ -131,6 +163,10 @@ async logIn(email, password) {
     }
   },
 
+  /**
+   * Troca de senha com código de recuperação — ainda não implementada: não chama a API
+   * e sempre devolve { isOk: true }.
+   */
   async changePassword(email, recoveryCode) {
     try {
       return { isOk: true };
@@ -140,6 +176,10 @@ async logIn(email, password) {
     }
   },
 
+  /**
+   * Criação de conta — ainda não implementada aqui: não chama a API e sempre devolve
+   * { isOk: true }. (O cadastro real de contas usa loginAccountsApi.create.)
+   */
   async createAccount(email, password) {
     try {
       return { isOk: true };
@@ -149,6 +189,7 @@ async logIn(email, password) {
     }
   },
 
+  /** Grava o objeto do usuário (com o token) no sessionStorage, em JSON, na chave "tltkn". */
   saveUserStorage(user) {
     try {
       sessionStorage.setItem(keySession, JSON.stringify(user));
@@ -157,6 +198,11 @@ async logIn(email, password) {
     }
   },
 
+  /**
+   * Lê o usuário salvo no sessionStorage. Devolve null se não houver sessão ou se o JSON
+   * estiver corrompido. Um usuário sem institutionId é tratado como admin da plataforma.
+   * @returns {object|null}
+   */
   getUserStorage() {
     const storedData = sessionStorage.getItem(keySession);
     if (!storedData) return null;

@@ -175,10 +175,17 @@ const requiredRules = [
   v => !!v || 'Este campo é obrigatório',
 ]
 
+/**
+ * Regra de validação do e-mail: aceita campo vazio (opcional) ou um e-mail no formato nome@dominio.ext.
+ */
 const emailRule = v => {
   return !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'E-mail inválido'
 }
 
+/**
+ * Busca os departamentos (GET /Department/GetAllDepartments) para o campo de seleção.
+ * Só aceita o retorno se for uma lista; caso contrário, deixa a lista vazia. Mostra um aviso se falhar.
+ */
 const loadDepartments = async () => {
   loadingDepartments.value = true
   try {
@@ -193,6 +200,10 @@ const loadDepartments = async () => {
   }
 }
 
+/**
+ * Valida o formulário e cadastra o funcionário (POST /Employee/CreateEmployee), enviando o model
+ * exatamente como foi preenchido. Em caso de sucesso, volta para a lista de funcionários.
+ */
 const submit = async () => {
   const { valid } = await formRef.value.validate()
 
@@ -215,6 +226,7 @@ const submit = async () => {
   }
 }
 
+// Ao abrir a tela, carrega os departamentos para o campo de seleção.
 onMounted(() => {
   loadDepartments()
 })

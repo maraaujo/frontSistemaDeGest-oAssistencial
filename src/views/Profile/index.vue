@@ -211,18 +211,26 @@ const requiredRules = [
   v => !!v || 'Este campo é obrigatório',
 ]
 
+/**
+ * Regra de validação do e-mail: aceita campo vazio ou um e-mail no formato nome@dominio.ext.
+ */
 const emailRule = v => {
   return !v || /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(v) || 'E-mail inválido'
 }
 
+// Rótulo do perfil exibido no cabeçalho: "Colaborador" se o usuário tem instituição, "Administrador" se não tem (não olha o userType).
 const roleLabel = computed(() => user.value.institutionId ? 'Colaborador' : 'Administrador')
 
+// Inicial do avatar: primeira letra do nome (ou do e-mail), em maiúscula; "?" se não houver nenhum.
 const initials = computed(() => {
   const source = user.value.name || user.value.email || ''
   
   return source.trim().charAt(0).toUpperCase() || '?'
 })
 
+/**
+ * Volta nome e e-mail do formulário para os valores do usuário logado (sessão) e limpa as mensagens de validação.
+ */
 const resetForm = () => {
   model.value = {
     ...model.value,
@@ -232,6 +240,11 @@ const resetForm = () => {
   formRef.value?.resetValidation()
 }
 
+/**
+ * Busca a conta de login pelo userId (GET /LoginAccount/GetLoginAccountById/{userId}) e preenche o formulário,
+ * completando com os dados da sessão quando faltar algo. Também copia a senha que a API devolver para o model.
+ * Lança erro se a API não retornar a conta; ao terminar, libera o salvamento (accountLoaded = true).
+ */
 const loadLoginAccount = async userId => {
   const response = await loginAccountsApi.getById(userId)
   const account = response?.data?.data ?? response?.data
@@ -251,6 +264,10 @@ const loadLoginAccount = async userId => {
   accountLoaded.value = true
 }
 
+/**
+ * Busca o nome da instituição do usuário (GET /Institution/GetInstitutionById/{id}) para exibir no perfil.
+ * Em caso de erro, apenas registra no console.
+ */
 const loadInstitution = async institutionId => {
   try {
     const response = await institutionsApi.getById(institutionId)
@@ -262,6 +279,11 @@ const loadInstitution = async institutionId => {
   }
 }
 
+/**
+ * Carrega o perfil: lê o usuário logado da sessão (auth.getUser), depois a conta de login completa
+ * e, se o usuário tiver instituição, o nome dela. Se a conta não carregar, avisa e preenche só
+ * nome/e-mail da sessão (nesse caso, ao tentar salvar, aparece o aviso para aguardar o carregamento).
+ */
 const loadProfile = async () => {
   loading.value = true
   accountLoaded.value = false
@@ -292,6 +314,11 @@ const loadProfile = async () => {
   }
 }
 
+/**
+ * Salva o perfil: só funciona depois que a conta foi carregada. Valida o formulário, envia o model inteiro
+ * (PUT /LoginAccount/Update/{userId}) e, se der certo, atualiza nome, e-mail e tipo do usuário na sessão
+ * (sessionStorage) para que o restante do sistema já mostre os dados novos.
+ */
 const submit = async () => {
   if (!accountLoaded.value) {
     toast.error('Aguarde o carregamento completo da conta.')
@@ -330,5 +357,6 @@ const submit = async () => {
   }
 }
 
+// Ao abrir a tela, carrega os dados do perfil do usuário logado.
 onMounted(loadProfile)
 </script>

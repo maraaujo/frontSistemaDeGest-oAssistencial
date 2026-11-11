@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 import { useTheme } from 'vuetify'
 
+// Props: quantidade de assinaturas por situação (status, count) e estados de carregamento/erro; emite "retry".
 const props = defineProps({
   data: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
@@ -21,12 +22,17 @@ const STATUS_META = {
 // ApexCharts precisa de cores literais (hex/rgb) para calcular tons do donut;
 // não aceita `var(--v-theme-*)` cru, por isso resolvemos via useTheme().
 const vuetifyTheme = useTheme()
+
+// Cores do tema atual do Vuetify (claro/escuro) em valores literais.
 const currentTheme = computed(() => vuetifyTheme.current.value.colors)
 
+// Soma de todas as assinaturas, exibida no centro do donut e usada no percentual do tooltip.
 const total = computed(() => props.data.reduce((sum, item) => sum + item.count, 0))
 
+// Valores do donut: a quantidade de cada situação.
 const series = computed(() => props.data.map(item => item.count))
 
+// Configuração do ApexCharts: donut com rótulos em português, cores por situação, total no centro e percentual no tooltip.
 const chartOptions = computed(() => ({
   chart: { type: 'donut', fontFamily: 'Roboto, sans-serif' },
   labels: props.data.map(item => STATUS_META[item.status]?.label ?? item.status),

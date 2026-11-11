@@ -4,16 +4,26 @@ import { apiService } from './api-service'
 // policy "SaasAdmin"). Endpoints reais confirmados em Backend/SistemaDeCadastro2.0:
 // Controller/V1/AdminOverviewController.cs
 
+/** Busca os indicadores (KPIs) do painel administrativo no período informado (GET /AdminOverview/Kpis?period=...). */
 const getKpis = async period => await apiService.get(`/AdminOverview/Kpis?period=${encodeURIComponent(period ?? '')}`)
 
+/** Busca a evolução da receita ao longo do período, para o gráfico de tendência (GET /AdminOverview/RevenueTrend?period=...). */
 const getRevenueTrend = async period => await apiService.get(`/AdminOverview/RevenueTrend?period=${encodeURIComponent(period ?? '')}`)
 
+/** Busca a movimentação de assinaturas no período (GET /AdminOverview/SubscriptionMovement?period=...). */
 const getSubscriptionMovement = async period => await apiService.get(`/AdminOverview/SubscriptionMovement?period=${encodeURIComponent(period ?? '')}`)
 
+/** Busca a receita agrupada por plano no período (GET /AdminOverview/RevenueByPlan?period=...). */
 const getRevenueByPlan = async period => await apiService.get(`/AdminOverview/RevenueByPlan?period=${encodeURIComponent(period ?? '')}`)
 
+/** Busca a contagem de assinaturas por situação (ativa, trial, inadimplente, cancelando) (GET /AdminOverview/SubscriptionStatus). */
 const getSubscriptionStatus = async () => await apiService.get('/AdminOverview/SubscriptionStatus')
 
+/**
+ * Lista as instituições clientes de forma paginada (GET /AdminOverview/Institutions).
+ * Monta a query string só com os filtros preenchidos; page e perPage são sempre enviados.
+ * @param {{ search?: string, status?: string, plan?: string, sort?: string, page?: number, perPage?: number }} [params] - filtros, ordenação (padrão 'revenue_desc') e paginação (padrão página 1, 10 por página)
+ */
 const getInstitutions = async ({ search = '', status = '', plan = '', sort = 'revenue_desc', page = 1, perPage = 10 } = {}) => {
   const params = new URLSearchParams()
 
@@ -27,6 +37,7 @@ const getInstitutions = async ({ search = '', status = '', plan = '', sort = 're
   return await apiService.get(`/AdminOverview/Institutions?${params.toString()}`)
 }
 
+/** Lista os planos de assinatura usados no painel administrativo (GET /AdminOverview/Plans). */
 const getPlans = async () => await apiService.get('/AdminOverview/Plans')
 
 export const adminOverviewApi = {
@@ -51,6 +62,12 @@ export const SUBSCRIPTION_STATUS_META = {
 // AdminInstitutionRowDTO só traz `status` + `renewsAt` (uma data ISO). O texto de renovação
 // varia conforme a situação, mas o backend não distingue "renova em" de "vencido em" —
 // isso é decidido aqui no front a partir do status já normalizado.
+/**
+ * Monta o texto de renovação exibido na linha da instituição, conforme a situação:
+ * "vencido em", "trial até", "encerra" ou "renova" + data (dd/mês abreviado). Sem data, devolve "—".
+ * @param {{ status?: string, renewsAt?: string }} row - linha vinda de getInstitutions
+ * @returns {string}
+ */
 export const formatRenewalText = row => {
   if (!row?.renewsAt)
     return '—'

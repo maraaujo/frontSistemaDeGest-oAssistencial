@@ -625,6 +625,10 @@ const medicineHeaders = [
   { title: '', key: 'actions', sortable: false },
 ]
 
+/**
+ * Cria um objeto de responsável vazio (nome, telefone, parentesco e endereço),
+ * usado como linha nova na etapa "Responsáveis".
+ */
 const newResponsible = () => ({
   patientId: 0,
   name: '',
@@ -664,8 +668,16 @@ const medicineForm = ref({
   observations: '',
 })
 
+/**
+ * Extrai o conteúdo útil da resposta da API: usa `response.data.data` quando a
+ * API devolve um envelope, senão retorna `response.data`.
+ */
 const getData = response => response?.data?.data ?? response?.data
 
+/**
+ * Normaliza o valor recebido para um array: aceita array puro, o formato
+ * `$values` do .NET ou um objeto único (vira array de um item); vazio vira [].
+ */
 const getList = value => {
   if (Array.isArray(value))
     return value
@@ -676,6 +688,10 @@ const getList = value => {
   return value ? [value] : []
 }
 
+/**
+ * Executa a validação do formulário (regras do Vuetify) e retorna true se os
+ * campos estiverem válidos; retorna false se o formulário ainda não existir.
+ */
 const validateCurrentStep = async () => {
   if (!formRef.value)
     return false
@@ -685,6 +701,10 @@ const validateCurrentStep = async () => {
   return valid
 }
 
+/**
+ * Avança para a próxima etapa do cadastro, mas só se a validação do formulário
+ * passar e ainda não estiver na última etapa.
+ */
 const goNext = async () => {
   const isValid = await validateCurrentStep()
 
@@ -695,11 +715,18 @@ const goNext = async () => {
     currentStep.value += 1
 }
 
+/**
+ * Volta para a etapa anterior do cadastro (sem validar), desde que não esteja na primeira.
+ */
 const goBack = () => {
   if (currentStep.value > 1)
     currentStep.value -= 1
 }
 
+/**
+ * Busca os tipos sanguíneos na API e preenche as opções do select ({ id, title }).
+ * Em caso de erro, registra no console e mostra mensagem em `loadError`.
+ */
 const loadBloodTypes = async () => {
   try {
     const items = getList(getData(await bloodTypesApi.getAll()))
@@ -714,6 +741,10 @@ const loadBloodTypes = async () => {
   }
 }
 
+/**
+ * Busca as condições clínicas cadastradas e preenche as opções ({ id, name })
+ * usadas na etapa "Condições clínicas". Em caso de erro, preenche `loadError`.
+ */
 const loadClinicalConditions = async () => {
   try {
     const items = getList(getData(await clinicalConditionsApi.getAll()))
@@ -728,6 +759,10 @@ const loadClinicalConditions = async () => {
   }
 }
 
+/**
+ * Busca os medicamentos cadastrados e preenche as opções ({ id, name }) usadas
+ * na etapa "Medicamentos". Em caso de erro, preenche `loadError`.
+ */
 const loadMedicines = async () => {
   try {
     const items = getList(getData(await medicinesApi.getAll()))
@@ -742,6 +777,10 @@ const loadMedicines = async () => {
   }
 }
 
+/**
+ * Busca os funcionários e preenche as opções ({ id, name }) para escolher o
+ * responsável pela administração do medicamento. Em caso de erro, preenche `loadError`.
+ */
 const loadEmployees = async () => {
   try {
     const items = getList(getData(await employeesApi.getAll()))
@@ -756,9 +795,22 @@ const loadEmployees = async () => {
   }
 }
 
+/**
+ * Adiciona um responsável em branco à lista de responsáveis do acolhido.
+ */
 const addResponsible = () => model.value.responsibles.push(newResponsible())
+
+/**
+ * Remove da lista o responsável na posição informada.
+ * @param {number} index Posição do responsável na lista.
+ */
 const removeResponsible = index => model.value.responsibles.splice(index, 1)
 
+/**
+ * Adiciona a condição clínica selecionada (com data de diagnóstico e observações)
+ * à lista local do acolhido e limpa os campos. Avisa se nenhuma condição foi escolhida.
+ * Nada é enviado à API aqui; o envio acontece no `submit`.
+ */
 const addClinicalCondition = () => {
   if (!selectedClinicalCondition.value) {
     toast.warning('Selecione uma condição clínica.')
@@ -780,8 +832,17 @@ const addClinicalCondition = () => {
   conditionForm.value = { diagnosisDate: '', observations: '' }
 }
 
+/**
+ * Remove da lista local a condição clínica na posição informada.
+ * @param {number} index Posição da condição na lista.
+ */
 const removeClinicalCondition = index => model.value.clinicalConditions.splice(index, 1)
 
+/**
+ * Adiciona à lista local um medicamento programado (medicamento, condição clínica
+ * relacionada, dosagem, frequência, horário, responsável e período) e limpa o formulário.
+ * Exige medicamento e condição clínica selecionados; o envio à API ocorre no `submit`.
+ */
 const addScheduledMedicine = () => {
   if (!selectedMedicine.value) {
     toast.warning('Selecione um medicamento.')
@@ -827,8 +888,19 @@ const addScheduledMedicine = () => {
   }
 }
 
+/**
+ * Remove da lista local o medicamento programado na posição informada.
+ * @param {number} index Posição do medicamento na lista.
+ */
 const removeScheduledMedicine = index => model.value.scheduledMedicines.splice(index, 1)
 
+/**
+ * Valida o formulário e, se válido, monta o payload completo do acolhido
+ * (dados, responsáveis, condições clínicas e medicamentos, com datas em ISO e
+ * horário no formato HH:mm:ss) e envia para `patientsApi.create`.
+ * Se der certo, mostra toast de sucesso e navega para a listagem de acolhidos;
+ * se a validação falhar, volta para a etapa 1 e avisa o usuário.
+ */
 const submit = async () => {
   const validation = await formRef.value?.validate()
 
@@ -899,6 +971,7 @@ const submit = async () => {
   }
 }
 
+// Ao abrir a tela, carrega em paralelo tipos sanguíneos, condições, medicamentos e funcionários.
 onMounted(() => {
   loadingOptions.value = true
 

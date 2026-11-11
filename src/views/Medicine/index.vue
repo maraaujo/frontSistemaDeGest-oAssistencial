@@ -256,6 +256,9 @@ const headers = [
 const administrationRoutes = ['Oral', 'Sublingual', 'Intravenosa', 'Intramuscular', 'Subcutânea', 'Tópica', 'Inalatória', 'Retal']
 const requiredRules = [value => Boolean(String(value ?? '').trim()) || 'Campo obrigatório']
 
+/**
+ * Cria um medicamento vazio (id 0), usado ao abrir o formulário de cadastro.
+ */
 const emptyModel = () => ({
   id: 0,
   name: '',
@@ -265,11 +268,21 @@ const emptyModel = () => ({
 })
 
 const model = ref(emptyModel())
+
+// Indica se o formulário está em modo edição (id maior que 0) ou cadastro.
 const editing = computed(() => model.value.id > 0)
 
+/**
+ * Extrai o conteúdo útil da resposta da API (`data.data`, senão `data`; vazio vira []).
+ */
 const getData = response => response?.data?.data ?? response?.data ?? []
+
+/**
+ * Garante um array: usa o próprio valor se já for array, senão tenta `items`, `data` ou `$values`.
+ */
 const extractList = data => Array.isArray(data) ? data : data?.items ?? data?.data ?? data?.$values ?? []
 
+// Lista de medicamentos filtrada pelo texto da busca (nome, dosagem, via ou descrição, sem diferenciar maiúsculas).
 const filteredMedicines = computed(() => {
   const term = search.value?.trim().toLocaleLowerCase('pt-BR')
 
@@ -280,6 +293,9 @@ const filteredMedicines = computed(() => {
     .some(value => String(value ?? '').toLocaleLowerCase('pt-BR').includes(term)))
 })
 
+/**
+ * Busca todos os medicamentos (`medicinesApi.getAll`) e preenche a tabela. Em erro, mostra toast.
+ */
 const loadMedicines = async () => {
   loading.value = true
 
@@ -293,11 +309,17 @@ const loadMedicines = async () => {
   }
 }
 
+/**
+ * Abre o diálogo do formulário em modo cadastro, com os campos vazios.
+ */
 const openCreate = () => {
   model.value = emptyModel()
   formDialog.value = true
 }
 
+/**
+ * Abre o diálogo do formulário em modo edição, preenchido com os dados do medicamento escolhido.
+ */
 const openEdit = item => {
   model.value = {
     id: Number(item.id),
@@ -309,6 +331,9 @@ const openEdit = item => {
   formDialog.value = true
 }
 
+/**
+ * Fecha o diálogo do formulário e limpa a validação; não fecha enquanto estiver salvando.
+ */
 const closeForm = () => {
   if (saving.value)
     return
@@ -317,6 +342,10 @@ const closeForm = () => {
   formRef.value?.resetValidation()
 }
 
+/**
+ * Valida o formulário e salva o medicamento: chama `medicinesApi.update` se estiver
+ * editando ou `medicinesApi.create` se for novo. Se der certo, fecha o diálogo e recarrega a tabela.
+ */
 const submit = async () => {
   const validation = await formRef.value?.validate()
 
@@ -354,11 +383,17 @@ const submit = async () => {
   }
 }
 
+/**
+ * Guarda o medicamento escolhido e abre o diálogo de confirmação de exclusão.
+ */
 const openDelete = item => {
   selectedMedicine.value = item
   deleteDialog.value = true
 }
 
+/**
+ * Exclui o medicamento selecionado (`medicinesApi.remove`), fecha o diálogo e recarrega a tabela.
+ */
 const removeMedicine = async () => {
   if (!selectedMedicine.value?.id)
     return
@@ -382,5 +417,6 @@ const removeMedicine = async () => {
   }
 }
 
+// Ao abrir a tela, carrega a lista de medicamentos.
 onMounted(loadMedicines)
 </script>

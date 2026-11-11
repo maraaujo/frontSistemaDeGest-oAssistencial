@@ -182,6 +182,10 @@ const administrationRouteOptions = [
   'Nasal',
 ]
 
+/**
+ * Converte um Date para texto "aaaa-mm-dd" no fuso local (compensa o fuso antes
+ * de usar toISOString, para não trocar o dia). Usado como data inicial padrão (hoje).
+ */
 const toDateOnly = date => {
   const offset = date.getTimezoneOffset() * 60_000
 
@@ -215,13 +219,21 @@ const requiredRules = [
   value => value !== null && value !== undefined && value !== '' || 'Campo obrigatório',
 ]
 
+// Regra do campo data final: se preenchida, não pode ser anterior à data inicial.
 const endDateRules = [
   value => !model.value.startDate || !value || new Date(value) >= new Date(model.value.startDate)
     || 'A data final deve ser igual ou posterior à data inicial',
 ]
 
+/**
+ * Extrai o conteúdo útil da resposta da API (`data.data`, senão `data`).
+ */
 const getData = response => response.data.data ?? response.data
 
+/**
+ * Extrai os dados da resposta e garante um array: array puro é mantido,
+ * objeto único vira array de um item e vazio vira [].
+ */
 const getList = response => {
   const data = getData(response)
 
@@ -234,6 +246,9 @@ const getList = response => {
   return []
 }
 
+/**
+ * Remove itens com `id` repetido, mantendo a primeira ocorrência de cada um.
+ */
 const dedupeById = items => {
   const seen = new Set()
 
@@ -247,6 +262,11 @@ const dedupeById = items => {
   })
 }
 
+/**
+ * Busca, uma após a outra, as listas de acolhidos, medicamentos e funcionários
+ * e monta as opções dos selects (sem ids repetidos). Se qualquer chamada falhar,
+ * mostra a mensagem de erro em `loadError`.
+ */
 const loadOptions = async () => {
   loadingOptions.value = true
   loadError.value = ''
@@ -282,6 +302,10 @@ const loadOptions = async () => {
   }
 }
 
+/**
+ * Busca todas as condições clínicas cadastradas (`clinicalConditionsApi.getAll`)
+ * e monta as opções do select de condição. Em erro, mostra toast.
+ */
 const loadClinicalConditions = async () => {
   loadingConditions.value = true
 
@@ -303,6 +327,10 @@ const loadClinicalConditions = async () => {
   }
 }
 
+/**
+ * Chamada ao escolher um medicamento: guarda a seleção no modelo e, se a
+ * dosagem prescrita ainda estiver vazia, preenche com a dosagem do medicamento.
+ */
 const onMedicineSelected = selected => {
   model.value.medicineDTO = selected
 
@@ -311,6 +339,11 @@ const onMedicineSelected = selected => {
   }
 }
 
+/**
+ * Valida o diálogo de "novo medicamento" (nome, dosagem e via) e adiciona o
+ * medicamento apenas na lista local de opções, com `id: 0`, já selecionando-o.
+ * Não chama a API aqui; ele só é enviado junto no `submit`. Depois fecha e limpa o diálogo.
+ */
 const addNewMedicine = () => {
   if (!newMedicine.value.name?.trim()) {
     toast.warning('Informe o nome do medicamento.')
@@ -354,6 +387,13 @@ const addNewMedicine = () => {
   }
 }
 
+/**
+ * Valida o formulário e cadastra o medicamento programado em
+ * `medicinePatientClinicalConditionsApi.create`. Monta o payload com o medicamento,
+ * a condição clínica escolhida, um vínculo novo acolhido-condição (diagnóstico = agora),
+ * horário em HH:mm:ss, início = data inicial + horário e fim = data final às 23:59:59.
+ * Se der certo, navega para a tela de próximos medicamentos.
+ */
 const submit = async () => {
   const validation = await formRef.value?.validate()
 
@@ -431,6 +471,7 @@ const submit = async () => {
   }
 }
 
+// Ao abrir a tela, carrega as opções dos selects e as condições clínicas.
 onMounted(() => {
   loadOptions()
   loadClinicalConditions()

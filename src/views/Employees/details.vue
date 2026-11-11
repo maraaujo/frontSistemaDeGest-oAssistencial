@@ -170,6 +170,10 @@ const employee = ref({
   departmentId: null,
 })
 
+/**
+ * Formata a data para exibição (dd/mm/aaaa). Se vier no formato ISO, usa só a parte da data;
+ * sem valor, mostra "Não informado".
+ */
 const formatDate = (date) => {
   if (!date) return 'Não informado'
   
@@ -183,6 +187,10 @@ const formatDate = (date) => {
   return dateObj.toLocaleDateString('pt-BR')
 }
 
+/**
+ * Busca o funcionário do id da URL (GET /Employee/GetEmployeeById/{id}) e guarda os dados para exibição.
+ * Se falhar, mostra um aviso e volta para a lista de funcionários.
+ */
 const loadEmployee = async () => {
   try {
     const response = await employeesApi.getById(route.params.id)
@@ -198,6 +206,9 @@ const loadEmployee = async () => {
   }
 }
 
+/**
+ * Abre a tela de edição deste funcionário (rota employees-update).
+ */
 const openEdit = () => {
   router.push({
     name: 'employees-update',
@@ -205,6 +216,7 @@ const openEdit = () => {
   })
 }
 
+// Ao abrir a tela, carrega os dados do funcionário.
 onMounted(() => {
   loadEmployee()
 })

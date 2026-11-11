@@ -161,8 +161,14 @@ const passwordConfirmation = ref('')
 const showPassword = ref(false)
 const showPasswordConfirmation = ref(false)
 const currentUser = auth.getUserStorage()
+
+// Indica se o usuário logado é admin da plataforma (conta sem institutionId).
 const isPlatformAdmin = computed(() => currentUser?.institutionId === null)
 
+/**
+ * Retorna um objeto novo com os campos vazios do formulário de conta de acesso
+ * (tipo padrão "Colaborador" e sem instituição selecionada).
+ */
 const emptyModel = () => ({
   nome: '',
   email: '',
@@ -193,8 +199,17 @@ const institutionRules = [
     || 'Selecione a instituição do usuário',
 ]
 
+/**
+ * Extrai o conteúdo útil da resposta do axios: usa `data.data` quando a API
+ * embrulha o retorno e, se não houver, o próprio `data`.
+ */
 const responseData = response => response?.data?.data ?? response?.data
 
+/**
+ * Monta a mensagem de erro para exibir ao usuário a partir de um erro do axios ou do corpo da resposta.
+ * Procura, nesta ordem, errorMessage, message, title, a primeira mensagem de validação (errors)
+ * e a mensagem do próprio erro; se nada for encontrado, usa o texto de fallback.
+ */
 const apiMessage = (source, fallback) => {
   const body = source?.response?.data ?? source?.data ?? source
   const validationMessages = body?.errors && typeof body.errors === 'object'
@@ -204,6 +219,10 @@ const apiMessage = (source, fallback) => {
   return body?.errorMessage ?? body?.message ?? body?.title ?? validationMessages[0] ?? source?.message ?? fallback
 }
 
+/**
+ * Verifica se a API respondeu com sucesso mesmo quando o status HTTP é 200:
+ * se o corpo trouxer success/isOk/succeeded igual a false, lança um erro com a mensagem da API.
+ */
 const ensureSuccessfulResponse = response => {
   const body = response?.data
 
@@ -211,6 +230,12 @@ const ensureSuccessfulResponse = response => {
     throw new Error(apiMessage(body, 'Não foi possível criar a conta de acesso.'))
 }
 
+/**
+ * Carrega as instituições do seletor do formulário.
+ * Usuário de instituição: busca só a própria (GET /Institution/GetInstitutionById) e já a deixa selecionada.
+ * Admin da plataforma: busca todas (GET /Institution/GetAllInstitutions) e adiciona a opção "Administração geral" (id 0).
+ * Em caso de erro, mostra um aviso na tela (o admin ainda pode criar conta administrativa).
+ */
 const loadInstitutions = async () => {
   loadingInstitutions.value = true
   loadError.value = ''
@@ -251,6 +276,12 @@ const loadInstitutions = async () => {
   }
 }
 
+/**
+ * Valida o formulário e cria a conta de acesso (POST /LoginAccount/CreateLoginAccount).
+ * Envia nome e e-mail sem espaços (e-mail em minúsculas), senha, tipo de usuário e instituição:
+ * o admin da plataforma usa a instituição escolhida (0 = administração geral); os demais, a própria instituição.
+ * Em caso de sucesso, mostra um aviso e volta para a lista de contas.
+ */
 const submit = async () => {
   if (saving.value) return
 
@@ -284,5 +315,6 @@ const submit = async () => {
   }
 }
 
+// Ao abrir a tela, carrega as instituições disponíveis para o seletor.
 onMounted(loadInstitutions)
 </script>

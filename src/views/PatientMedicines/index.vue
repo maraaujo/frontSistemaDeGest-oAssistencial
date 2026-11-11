@@ -408,12 +408,19 @@ const administrationForm = ref({
   observations: '',
 })
 
+/**
+ * Converte um Date para "aaaa-mm-ddTHH:mm" no fuso local, formato aceito pelo
+ * input datetime-local (usado para pré-preencher a data/hora da administração).
+ */
 const toDateTimeLocal = date => {
   const offset = date.getTimezoneOffset() * 60_000
 
   return new Date(date.getTime() - offset).toISOString().slice(0, 16)
 }
 
+/**
+ * Formata uma data no padrão brasileiro (dd/mm/aaaa); retorna "-" se vazia.
+ */
 const formatDate = value => {
   if (!value)
     return '-'
@@ -421,6 +428,9 @@ const formatDate = value => {
   return new Date(value).toLocaleDateString('pt-BR')
 }
 
+/**
+ * Exibe só "HH:mm" de um horário em texto (ex.: "08:00:00" vira "08:00"); retorna "-" se vazio.
+ */
 const formatTime = value => {
   if (!value)
     return '-'
@@ -431,6 +441,10 @@ const formatTime = value => {
   return value
 }
 
+/**
+ * Navega para a edição do medicamento programado. Aceita a linha da tabela
+ * (inclusive no formato `{ raw }` do Vuetify) ou o id direto; sem id, mostra erro.
+ */
 const goToEdit = async itemOrId => {
   const item = itemOrId?.raw ?? itemOrId
   const id = typeof item === 'object' ? item?.id : item
@@ -452,11 +466,19 @@ const goToEdit = async itemOrId => {
 const showDeleteDialog = ref(false)
 const offerToDelete = ref(null)
 
+/**
+ * Guarda o id do registro a excluir e abre o diálogo de confirmação de exclusão.
+ */
 const confirmDeleteOffer = id => {
   offerToDelete.value = id
   showDeleteDialog.value = true
 }
 
+/**
+ * Exclui o medicamento programado (`medicinePatientClinicalConditionsApi.remove`) usando o
+ * id recebido ou o guardado na confirmação; depois recarrega a lista e fecha o diálogo.
+ * Apesar do nome "Offer", remove a prescrição de medicamento do acolhido.
+ */
 const deleteOffer = async id => {
   const deleteId = id ?? offerToDelete.value
 
@@ -479,34 +501,56 @@ const deleteOffer = async id => {
 
 
 // Métodos assíncronos
+/**
+ * Aplica os filtros: volta para a página 1 e recarrega a lista de medicamentos programados.
+ */
 const submit = async () => {
   paginationData.value.page = 1
   await getMedicinePatientClinicalCondicions()
 }
 
+/**
+ * Troca a página da paginação e recarrega a lista.
+ * @param {number|string} page Número da nova página.
+ */
 const changePage = async page => {
   paginationData.value.page = Number(page)
   await getMedicinePatientClinicalCondicions()
 }
 
+/**
+ * Busca todos os medicamentos (`medicinesApi.getAll`) para o filtro da tela.
+ */
 const getMedicines = async () => {
   const ret = await medicinesApi.getAll()
 
   listMedicine.value = ret.data.data ?? ret.data
 }
 
+/**
+ * Busca todos os acolhidos (`patientsApi.getAll`) para o filtro da tela.
+ */
 const getPatients = async () => {
   const ret = await patientsApi.getAll()
 
   listPatient.value = ret.data.data ?? ret.data
 }
 
+/**
+ * Busca todos os funcionários (`employeesApi.getAll`) para o filtro de responsável.
+ */
 const getListEmployees = async () => {
   const ret = await employeesApi.getAll()
 
   listResponsibleEmployee.value = ret.data.data ?? ret.data
 }
 
+/**
+ * Busca a página atual de medicamentos programados com os filtros
+ * (`medicinePatientClinicalConditionsApi.filter`). Aceita vários formatos de resposta
+ * para achar a lista e os dados de paginação (itens por página, total e páginas).
+ * Em erro, limpa a lista e mostra toast.
+ */
 const getMedicinePatientClinicalCondicions = async () => {
   loadingmedicinePatientClinicalConditions.value = true
   filtermodel.value.page = paginationData.value.page
@@ -573,6 +617,10 @@ const getMedicinePatientClinicalCondicions = async () => {
   }
 }
 
+/**
+ * Abre o diálogo de registrar administração para a linha escolhida, com status
+ * "Administrado", data/hora atual e observações vazias.
+ */
 const openAdministrationDialog = item => {
   selectedItem.value = item
   administrationForm.value = {
@@ -583,6 +631,10 @@ const openAdministrationDialog = item => {
   administrationDialog.value = true
 }
 
+/**
+ * Fecha o diálogo de administração e limpa a validação do formulário;
+ * não fecha enquanto o registro estiver sendo salvo.
+ */
 const closeAdministrationDialog = () => {
   if (savingAdministration.value)
     return
@@ -591,6 +643,12 @@ const closeAdministrationDialog = () => {
   administrationFormRef.value?.resetValidation()
 }
 
+/**
+ * Valida o diálogo e registra a administração do medicamento
+ * (`medicationAdministrationsApi.create`) com status, data/hora administrada e observações.
+ * O horário previsto enviado é a data de início da prescrição (ou o horário, se não houver).
+ * Se der certo, fecha o diálogo e recarrega a lista.
+ */
 const saveAdministration = async () => {
   const validation = await administrationFormRef.value?.validate()
 
@@ -629,6 +687,7 @@ const saveAdministration = async () => {
   }
 }
 
+// Ao abrir a tela, carrega a lista de medicamentos programados e as opções dos filtros.
 onMounted(() => {
   getMedicinePatientClinicalCondicions(),
   getMedicines(),

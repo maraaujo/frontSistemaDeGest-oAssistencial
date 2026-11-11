@@ -352,8 +352,15 @@ const shortcuts = [
   { title: 'Histórico de medicação', route: 'administered-medicines-history', icon: 'mdi-history', color: 'success' },
 ]
 
+/**
+ * Extrai o conteúdo útil da resposta do axios (`data.data` ou `data`); se não houver nada, devolve [].
+ */
 const getResponseData = response => response?.data?.data ?? response?.data ?? []
 
+/**
+ * Garante que o retorno vire um array: aceita a lista direta, a primeira chave de `keys` que contenha
+ * um array (ou um array em $values), ou items/$values; caso contrário, devolve [].
+ */
 const extractList = (value, keys = []) => {
   if (Array.isArray(value))
     return value
@@ -369,6 +376,9 @@ const extractList = (value, keys = []) => {
   return value?.items ?? value?.$values ?? []
 }
 
+/**
+ * Retorna true se a data informada é válida e cai no dia de hoje (pelo horário local do navegador).
+ */
 const isToday = value => {
   if (!value)
     return false
@@ -382,6 +392,10 @@ const isToday = value => {
     && date.getDate() === today.getDate()
 }
 
+/**
+ * Calcula o card "Pacientes ativos" a partir de patientsApi.getAll. Se os pacientes tiverem campo de situação
+ * (active, isActive ou status), conta só os ativos; senão, conta todos. Em caso de erro, mostra 0.
+ */
 const loadPatients = async () => {
   try {
     const list = extractList(getResponseData(await patientsApi.getAll()), ['patients'])
@@ -404,6 +418,10 @@ const loadPatients = async () => {
   }
 }
 
+/**
+ * Busca todos os agendamentos (GET /Appointment/GetAllAppointments), normaliza paciente, responsável e data,
+ * conta quantos são de hoje (card "Agendamentos hoje") e mostra na tabela os 5 próximos que não estão cancelados.
+ */
 const loadAppointments = async () => {
   try {
     const data = getResponseData(await appointmentsApi.getAll())
@@ -428,6 +446,11 @@ const loadAppointments = async () => {
   }
 }
 
+/**
+ * Busca os lembretes de medicação (GET /MedicationAdministration/GetMedicineReminders), calcula os minutos
+ * até cada dose, ordena da mais urgente para a menos urgente e mostra as 5 primeiras. Também preenche os cards
+ * "Programadas hoje" (total de lembretes) e "Atrasadas" (minutos negativos).
+ */
 const loadMedicineReminders = async () => {
   try {
     const data = getResponseData(await medicationAdministrationsApi.getMedicineReminders())
@@ -447,6 +470,11 @@ const loadMedicineReminders = async () => {
   }
 }
 
+/**
+ * Busca a primeira página (5 registros) do histórico de administrações
+ * (POST /MedicationAdministration/GetPagedMedicationAdministrationByFilter), ordena da mais recente para a mais antiga
+ * e preenche a tabela. O card "Administradas hoje" conta, entre esses 5 registros, os com status administrado e data de hoje.
+ */
 const loadMedicationAdministrations = async () => {
   try {
     // Mesmo endpoint e formato de filtro utilizados pela tela de Histórico de medicação.
@@ -485,6 +513,10 @@ const loadMedicationAdministrations = async () => {
   }
 }
 
+/**
+ * Carrega todos os blocos do painel em paralelo (pacientes, agendamentos, lembretes e administrações).
+ * Usa allSettled para que a falha de um bloco não impeça os demais.
+ */
 const loadDashboard = async () => {
   loading.value = true
 
@@ -500,6 +532,9 @@ const loadDashboard = async () => {
   }
 }
 
+/**
+ * Formata data e hora no padrão brasileiro (dd/mm/aaaa hh:mm:ss); vazio ou inválido vira "-".
+ */
 const formatDate = value => {
   if (!value)
     return '-'
@@ -509,6 +544,10 @@ const formatDate = value => {
   return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('pt-BR')
 }
 
+/**
+ * Formata só o horário (hh:mm). Se já vier como texto "hh:mm...", corta os 5 primeiros caracteres;
+ * se for data, converte para a hora local. Vazio ou inválido vira "-".
+ */
 const formatTime = value => {
   if (!value)
     return '-'
@@ -523,6 +562,10 @@ const formatTime = value => {
     : date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
+/**
+ * Define rótulo e cor do status de um lembrete pelos minutos até a dose:
+ * negativo = "Atrasado" (vermelho), até 60 min = "Próximo" (amarelo), demais ou sem horário = "Programado" (azul).
+ */
 const getReminderStatus = item => {
   const minutes = item.liveMinutes ?? minutesUntilDose(item)
 
@@ -536,6 +579,10 @@ const getReminderStatus = item => {
   return { label: 'Programado', color: 'info' }
 }
 
+/**
+ * Cor do chip de status da administração (sem diferenciar maiúsculas): administrado = verde, atrasado = amarelo,
+ * cancelado/não administrado = vermelho, outros = cinza.
+ */
 const getAdministrationColor = status => ({
   administrado: 'success',
   administered: 'success',
@@ -544,6 +591,10 @@ const getAdministrationColor = status => ({
   'não administrado': 'error',
 }[String(status ?? '').toLocaleLowerCase('pt-BR')] ?? 'secondary')
 
+/**
+ * Cor do chip de status do agendamento: pendente = amarelo, confirmado = azul, realizado = verde,
+ * cancelado = vermelho, outros = cinza.
+ */
 const getAppointmentColor = status => ({
   pendente: 'warning',
   confirmado: 'info',
@@ -551,7 +602,11 @@ const getAppointmentColor = status => ({
   cancelado: 'error',
 }[String(status ?? '').toLocaleLowerCase('pt-BR')] ?? 'secondary')
 
+/**
+ * Navega para a tela do atalho clicado, usando o nome da rota.
+ */
 const goTo = route => router.push({ name: route })
 
+// Ao abrir a tela, carrega todos os indicadores e tabelas do painel.
 onMounted(loadDashboard)
 </script>

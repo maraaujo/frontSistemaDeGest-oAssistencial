@@ -341,8 +341,16 @@ const appointmentHeaders = [
 
 ]
 
+/**
+ * Extrai o conteúdo útil da resposta da API (`data.data`, senão `data`);
+ * se não houver nada, retorna um objeto vazio.
+ */
 const getData = response => response?.data?.data ?? response?.data ?? {}
 
+/**
+ * Garante um array: aceita array puro ou o formato `$values` do .NET;
+ * qualquer outro valor vira array vazio.
+ */
 const getArray = value => {
   if (Array.isArray(value))
     return value
@@ -353,6 +361,11 @@ const getArray = value => {
   return []
 }
 
+/**
+ * Busca os detalhes do acolhido pelo id da rota (`patientsApi.getPatientDetails`)
+ * e distribui o retorno nos refs da tela: dados gerais, tipo sanguíneo, responsáveis,
+ * condições clínicas, medicamentos, atendimentos e doenças. Em erro, mostra toast.
+ */
 const loadPatient = async () => {
   loading.value = true
 
@@ -378,6 +391,9 @@ const loadPatient = async () => {
   }
 }
 
+/**
+ * Formata uma data no padrão brasileiro (dd/mm/aaaa); retorna "-" se vazia.
+ */
 const formatDate = value => {
   if (!value)
     return '-'
@@ -385,6 +401,9 @@ const formatDate = value => {
   return new Date(value).toLocaleDateString('pt-BR')
 }
 
+/**
+ * Formata data e hora no padrão brasileiro (dd/mm/aaaa hh:mm:ss); retorna "-" se vazia.
+ */
 const formatDateTime = value => {
   if (!value)
     return '-'
@@ -392,6 +411,10 @@ const formatDateTime = value => {
   return new Date(value).toLocaleString('pt-BR')
 }
 
+/**
+ * Exibe só "HH:mm" de um horário em texto (ex.: "08:00:00" vira "08:00");
+ * retorna "-" se vazio e devolve o valor como veio se não for texto.
+ */
 const formatTime = value => {
   if (!value)
     return '-'
@@ -402,6 +425,7 @@ const formatTime = value => {
   return value
 }
 
+// Calcula a idade atual do acolhido a partir da data de nascimento (ex.: "82 anos"), ou "-" se não houver.
 const ageText = computed(() => {
   if (!patient.value.birthDate)
     return '-'
@@ -418,6 +442,7 @@ const ageText = computed(() => {
   return `${age} anos`
 })
 
+// Ao abrir a tela, carrega os detalhes do acolhido.
 onMounted(() => {
   loadPatient()
 })

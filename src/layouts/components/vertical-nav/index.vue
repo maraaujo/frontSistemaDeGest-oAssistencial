@@ -23,6 +23,13 @@ const { t } = useLocale()
 const { isVerticalMenuMini, isSemiDark, skins } = useAppConfig()
 const OpenedGroup = ref([])
 
+/**
+ * Itens do menu lateral que o usuário logado pode ver (lidos de menus/vertical.js).
+ * O admin da plataforma (sem institutionId) vê tudo; os demais não veem o título
+ * "Administração" nem os links admin-overview e admin-accounts. O filtro olha só o
+ * primeiro nível do menu. Como o sessionStorage não é reativo, o valor é calculado
+ * com a sessão existente quando o componente é criado.
+ */
 const visibleVerticalItems = computed(() => {
   const currentUser = auth.getUserStorage()
 
@@ -40,18 +47,28 @@ const visibleVerticalItems = computed(() => {
   )
 })
 
+/**
+ * Escolhe o componente que desenha cada item: VerticalNavGroup (item com submenu
+ * em children) ou VerticalNavLink (link simples).
+ */
 const resolveNavLinkGroup = computed(() => {
   return navItem => navItem.children ? VerticalNavGroup : VerticalNavLink
 })
 
+// Ao criar o menu, já deixa aberto o grupo que contém a rota atual (se houver).
 OpenedGroup.value = isGroupActive(visibleVerticalItems.value)
 
 // remove group active when only link active
+/** Fecha os grupos abertos do menu quando um link simples (fora de grupo) é ativado. */
 const handleGroupClose = () => {
   OpenedGroup.value = ['']
 }
 
 // handle scroll event
+/**
+ * Ao rolar a lista do menu, adiciona a classe 'scrolled' no body (rolagem > 4px) ou a
+ * remove (de volta ao topo), o que liga/desliga a sombra no topo da lista de itens.
+ */
 const handleScroll = () => {
   const railY = document.querySelector('.layout-vertical-nav .ps__rail-y')
   if (railY) {

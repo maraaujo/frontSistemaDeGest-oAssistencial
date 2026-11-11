@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 
+// Props: linhas da tabela, estados de carregamento/erro, paginação (página, total de páginas, total de registros) e planos para o filtro.
 const props = defineProps({
   items: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
@@ -11,6 +12,7 @@ const props = defineProps({
   plans: { type: Array, default: () => [] },
 })
 
+// Eventos: "search" envia os filtros ao pai, "retry" pede nova tentativa após erro e "pageChange" informa a página escolhida.
 const emit = defineEmits(['search', 'retry', 'pageChange'])
 
 const statusOptions = [
@@ -32,8 +34,14 @@ const headers = [
   { title: 'Renovação', key: 'renewalText', sortable: false },
 ]
 
+/**
+ * Formata um valor como moeda brasileira (ex.: R$ 1.234,56); vazio vira R$ 0,00.
+ */
 const formatCurrency = value => Number(value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
+/**
+ * Define a cor da barra de adesão: verde a partir de 95%, amarelo a partir de 90% e vermelho abaixo disso.
+ */
 const adherenceColor = value => {
   if (value >= 95)
     return 'success'
@@ -43,13 +51,22 @@ const adherenceColor = value => {
   return 'error'
 }
 
+/**
+ * Envia ao componente pai (evento "search") uma cópia dos filtros digitados; o pai é quem consulta a API.
+ */
 const submit = () => emit('search', { ...filters.value })
 
+/**
+ * Limpa busca, situação e plano e emite "search" com os filtros vazios para recarregar a tabela.
+ */
 const clearFilters = () => {
   filters.value = { search: '', status: null, plan: null }
   emit('search', { ...filters.value })
 }
 
+/**
+ * Clique numa linha da tabela: por enquanto só registra o id da instituição no console (não abre nenhuma tela).
+ */
 const onRowClick = (event, { item }) => {
   // Detalhe da instituição fica fora do escopo desta tela (seção 14 da especificação).
   console.info('Abrir detalhe da instituição:', item.id)

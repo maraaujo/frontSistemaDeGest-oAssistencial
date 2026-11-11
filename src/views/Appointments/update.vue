@@ -27,10 +27,29 @@ const route = useRoute(); const router = useRouter(); const formRef = ref(); con
 const patients = ref([]); const employees = ref([]); const statusOptions = ['Pendente', 'Confirmado', 'Realizado', 'Cancelado']
 const requiredRules = [value => !!value || 'Este campo é obrigatório']
 const model = ref({ id: null, patientId: null, responsible: null, appointmentType: '', dateTime: '', description: '', status: 'Pendente', observations: '' })
+
+/**
+ * Extrai o conteúdo útil da resposta do axios: usa `data.data` quando a API
+ * embrulha o retorno e, se não houver, o próprio `data`.
+ */
 const getData = response => response?.data?.data ?? response?.data
+
+/**
+ * Garante que o retorno vire um array: aceita a lista direta ou uma lista dentro da chave informada,
+ * de items ou de $values; caso contrário, devolve [].
+ */
 const getList = (data, key) => Array.isArray(data) ? data : data?.[key] ?? data?.items ?? data?.$values ?? []
+
+/**
+ * Converte a data da API para o formato do campo datetime-local ("aaaa-mm-ddThh:mm"),
+ * ajustando o fuso para mostrar o horário local. Sem valor, devolve ''.
+ */
 const toInputDateTime = value => value ? new Date(new Date(value).getTime() - new Date(value).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''
 
+/**
+ * Carrega em paralelo pacientes, funcionários e o agendamento da URL (GET /Appointment/GetAppointmentById/{id})
+ * e preenche o formulário, aceitando nomes de campos alternativos. Se falhar, avisa e volta para a lista.
+ */
 const load = async () => {
   try {
     const [patientResponse, employeeResponse, appointmentResponse] = await Promise.all([patientsApi.getAll(), employeesApi.getAll(), appointmentsApi.getById(route.params.id)])
@@ -42,6 +61,11 @@ const load = async () => {
   } finally { loading.value = false }
 }
 
+/**
+ * Valida o formulário e atualiza o agendamento (PUT /Appointment/Update/{id}).
+ * Envia os dados com o userId do usuário logado, a data/hora em ISO (UTC) e os textos sem espaços nas pontas.
+ * Em caso de sucesso, volta para a lista de agendamentos.
+ */
 const submit = async () => {
   const { valid } = await formRef.value.validate(); if (!valid) return
   const userId = auth.getUserStorage()?.userId
@@ -56,5 +80,6 @@ const submit = async () => {
   } finally { saving.value = false }
 }
 
+// Ao abrir a tela, carrega as opções e os dados do agendamento a editar.
 onMounted(load)
 </script>

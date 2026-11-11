@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 
+// Props: dados mensais de assinaturas novas e canceladas (month, new, canceled) e estados de carregamento/erro; emite "retry".
 const props = defineProps({
   data: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
@@ -10,11 +11,13 @@ const props = defineProps({
 
 const emit = defineEmits(['retry'])
 
+// Duas séries do gráfico: assinaturas novas e canceladas por mês.
 const series = computed(() => [
   { name: 'Novas', data: props.data.map(item => item.new) },
   { name: 'Canceladas', data: props.data.map(item => item.canceled) },
 ])
 
+// Configuração do ApexCharts: colunas lado a lado (verde = novas, vermelho = canceladas) por mês.
 const chartOptions = computed(() => ({
   chart: { type: 'bar', toolbar: { show: false }, stacked: false, fontFamily: 'Roboto, sans-serif' },
   colors: ['rgba(var(--v-theme-success), 1)', 'rgba(var(--v-theme-error), 1)'],

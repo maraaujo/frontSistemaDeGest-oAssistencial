@@ -7,6 +7,13 @@
 //   - faltando tempo      -> arredonda para CIMA (1min50s => 2 min)
 //   - no primeiro minuto  -> 0 ("Agora")
 //   - atrasado            -> minutos completos de atraso
+/**
+ * Minutos até a próxima dose do item (lembrete). Se nextDoseDateTime for inválido,
+ * usa o minutesRemaining vindo do backend; se nem ele existir, devolve null.
+ * @param {{ nextDoseDateTime?: string, minutesRemaining?: number }} item - lembrete de medicamento
+ * @param {number} [nowMs=Date.now()] - instante de referência em milissegundos
+ * @returns {number|null} positivo = faltam N min; 0 = agora; negativo = atrasado N min
+ */
 export const minutesUntilDose = (item, nowMs = Date.now()) => {
   const doseMs = new Date(item?.nextDoseDateTime).getTime()
 
@@ -26,6 +33,11 @@ export const minutesUntilDose = (item, nowMs = Date.now()) => {
   return -Math.floor(-diff)
 }
 
+/**
+ * Converte minutos em texto legível: "2h 05min", "3h" ou "45 min".
+ * @param {number} totalMinutes - valor não negativo
+ * @returns {string}
+ */
 const formatDuration = totalMinutes => {
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
@@ -38,6 +50,12 @@ const formatDuration = totalMinutes => {
   return `${minutes} min`
 }
 
+/**
+ * Monta o texto exibido no lembrete a partir do resultado de minutesUntilDose:
+ * "Em 1h 30min", "Agora", "Atrasado 15 min" ou "Não informado" (null/undefined).
+ * @param {number|null|undefined} minutes
+ * @returns {string}
+ */
 export const formatRemaining = minutes => {
   if (minutes === null || minutes === undefined)
     return 'Não informado'

@@ -2,12 +2,22 @@
 // Espelham as regras do backend (SistemaDeCadastro.Domain/Validators):
 // aceitam entrada com ou sem máscara e as mensagens são idênticas às da API.
 
+/**
+ * Remove tudo o que não for dígito (pontos, traços, parênteses, espaços).
+ * Valores vazios/nulos viram string vazia. Ex.: "123.456.789-09" -> "12345678909".
+ * @returns {string}
+ */
 export const onlyDigits = value => (value ? String(value).replace(/\D/g, '') : '')
 
 // ---------------------------------------------------------------------------
 // CPF
 // ---------------------------------------------------------------------------
 
+/**
+ * Valida um CPF (com ou sem máscara): exige 11 dígitos, rejeita sequências repetidas
+ * e confere os dois dígitos verificadores pelo cálculo de módulo 11.
+ * @returns {boolean}
+ */
 export const isValidCpf = value => {
   const digits = onlyDigits(value)
 
@@ -20,6 +30,10 @@ export const isValidCpf = value => {
 
   const numbers = digits.split('').map(Number)
 
+  /**
+   * Calcula um dígito verificador: soma os primeiros `length` dígitos multiplicados por pesos
+   * decrescentes a partir de `startWeight`; resto < 2 dá 0, senão 11 - resto.
+   */
   const checkDigit = (length, startWeight) => {
     let sum = 0
     let weight = startWeight
@@ -43,6 +57,10 @@ export const isValidCpf = value => {
   return true
 }
 
+/**
+ * Aplica a máscara 000.000.000-00 ao CPF. Se não tiver exatamente 11 dígitos,
+ * devolve o valor original sem alterar (ou '' se for nulo).
+ */
 export const formatCpf = value => {
   const digits = onlyDigits(value)
 
@@ -56,6 +74,11 @@ export const formatCpf = value => {
 // CEP
 // ---------------------------------------------------------------------------
 
+/**
+ * Valida um CEP (com ou sem máscara): precisa ter 8 dígitos e não pode ser 00000000.
+ * Não consulta se o CEP existe de fato.
+ * @returns {boolean}
+ */
 export const isValidCep = value => {
   const digits = onlyDigits(value)
 
@@ -68,6 +91,10 @@ export const isValidCep = value => {
   return true
 }
 
+/**
+ * Aplica a máscara 00000-000 ao CEP. Se não tiver exatamente 8 dígitos,
+ * devolve o valor original sem alterar (ou '' se for nulo).
+ */
 export const formatCep = value => {
   const digits = onlyDigits(value)
 
@@ -94,6 +121,11 @@ const VALID_AREA_CODES = new Set([
   91, 92, 93, 94, 95, 96, 97, 98, 99,
 ])
 
+/**
+ * Valida um telefone brasileiro com DDD (com ou sem máscara): 10 dígitos (fixo, assinante
+ * começando de 2 a 5) ou 11 dígitos (celular, começando com 9), e DDD na lista oficial.
+ * @returns {boolean}
+ */
 export const isValidPhone = value => {
   const digits = onlyDigits(value)
 
@@ -114,6 +146,10 @@ export const isValidPhone = value => {
   return subscriberFirstDigit >= '2' && subscriberFirstDigit <= '5'
 }
 
+/**
+ * Aplica a máscara de telefone: (00) 00000-0000 para celular (11 dígitos) ou
+ * (00) 0000-0000 para fixo (10 dígitos). Outros tamanhos voltam sem alteração.
+ */
 export const formatPhone = value => {
   const digits = onlyDigits(value)
 
@@ -130,6 +166,12 @@ export const formatPhone = value => {
 // Regras para VForm / VTextField (Vuetify). Mensagens iguais às do backend.
 // ---------------------------------------------------------------------------
 
+/**
+ * Gera as regras de validação de CPF para o atributo :rules de um VTextField.
+ * Campo vazio só gera erro ("Campo obrigatório") se required for true; preenchido, precisa ser CPF válido.
+ * @param {{ required?: boolean }} [options]
+ * @returns {Array<(value: string) => true|string>}
+ */
 export const cpfRules = ({ required = false } = {}) => [
   value => {
     if (!value)
@@ -139,6 +181,12 @@ export const cpfRules = ({ required = false } = {}) => [
   },
 ]
 
+/**
+ * Gera as regras de validação de CEP para o atributo :rules de um VTextField.
+ * Campo vazio só gera erro se required for true; preenchido, precisa ser CEP válido.
+ * @param {{ required?: boolean }} [options]
+ * @returns {Array<(value: string) => true|string>}
+ */
 export const cepRules = ({ required = false } = {}) => [
   value => {
     if (!value)
@@ -148,6 +196,12 @@ export const cepRules = ({ required = false } = {}) => [
   },
 ]
 
+/**
+ * Gera as regras de validação de telefone para o atributo :rules de um VTextField.
+ * Campo vazio só gera erro se required for true; preenchido, precisa ser telefone válido.
+ * @param {{ required?: boolean }} [options]
+ * @returns {Array<(value: string) => true|string>}
+ */
 export const phoneRules = ({ required = false } = {}) => [
   value => {
     if (!value)

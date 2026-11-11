@@ -17,15 +17,31 @@ import { apiService } from './api-service';
  * @property {string} observations
  */
 
+/** Lista todas as administrações de medicamento registradas (GET /MedicationAdministration/GetAllMedicationAdministrations). */
 const getAll = async () => await apiService.get('/MedicationAdministration/GetAllMedicationAdministrations');
+
+/** Busca uma administração de medicamento pelo id, passado na rota (GET /MedicationAdministration/GetMedicationAdministrationById/{id}). */
 const getById = async (id) => await apiService.get(`/MedicationAdministration/GetMedicationAdministrationById/${id}`);
+
+/** Registra que um medicamento foi administrado a um acolhido (POST /MedicationAdministration/CreateMedicationAdministration). */
 const create = async (model) => await apiService.post('/MedicationAdministration/CreateMedicationAdministration', model);
+
+/** Envia a alteração da administração do id informado (POST /MedicationAdministration/UpdateMedicationAdministration/{id}). */
 const update = async (id, model) => await apiService.post(`/MedicationAdministration/UpdateMedicationAdministration/${id}`, model);
+
+/** Exclui o registro de administração de medicamento pelo id (DELETE /MedicationAdministration/DeleteMedicationAdministration/{id}). */
 const remove = async (id) => await apiService.delete(`/MedicationAdministration/DeleteMedicationAdministration/${id}`);
+
+/** Busca o histórico de administrações de forma paginada, conforme o filtro (POST /MedicationAdministration/GetPagedMedicationAdministrationByFilter). */
 const filter = async (filter) => await apiService.post('/MedicationAdministration/GetPagedMedicationAdministrationByFilter', filter);
+
+/** Busca os lembretes das próximas doses de medicamento dos acolhidos (GET /MedicationAdministration/GetMedicineReminders). */
 const getMedicineReminders = async () => await apiService.get('/MedicationAdministration/GetMedicineReminders')
 
 /**
+ * Busca o relatório diário de medicamentos (planejado x administrado) de um dia, opcionalmente
+ * de um único acolhido (GET /MedicationAdministration/GetDailyMedicationReport?date=...&patientId=...).
+ * Só inclui na query string os parâmetros preenchidos.
  * @param {{ date?: string, patientId?: number|null }} [params] - date no formato YYYY-MM-DD; ambos opcionais
  */
 const getDailyMedicationReport = async ({ date, patientId } = {}) => {

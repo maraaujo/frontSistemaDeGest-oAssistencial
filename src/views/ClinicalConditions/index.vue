@@ -259,6 +259,9 @@ const headers = [
 
 const requiredRules = [value => Boolean(String(value ?? '').trim()) || 'Campo obrigatório']
 
+/**
+ * Cria uma condição clínica vazia (id 0), usada ao abrir o formulário de cadastro.
+ */
 const emptyModel = () => ({
   id: 0,
   name: '',
@@ -267,11 +270,21 @@ const emptyModel = () => ({
 })
 
 const model = ref(emptyModel())
+
+// Indica se o formulário está em modo edição (id maior que 0) ou cadastro.
 const editing = computed(() => model.value.id > 0)
 
+/**
+ * Extrai o conteúdo útil da resposta da API (`data.data`, senão `data`; vazio vira []).
+ */
 const getData = response => response?.data?.data ?? response?.data ?? []
+
+/**
+ * Garante um array: usa o próprio valor se já for array, senão tenta `items`, `data` ou `$values`.
+ */
 const extractList = data => Array.isArray(data) ? data : data?.items ?? data?.data ?? data?.$values ?? []
 
+// Lista de condições filtrada pelo texto da busca (nome, tipo ou descrição, sem diferenciar maiúsculas).
 const filteredClinicalConditions = computed(() => {
   const term = search.value?.trim().toLocaleLowerCase('pt-BR')
 
@@ -282,6 +295,9 @@ const filteredClinicalConditions = computed(() => {
     .some(value => String(value ?? '').toLocaleLowerCase('pt-BR').includes(term)))
 })
 
+/**
+ * Busca todas as condições clínicas (`clinicalConditionsApi.getAll`) e preenche a tabela. Em erro, mostra toast.
+ */
 const loadClinicalConditions = async () => {
   loading.value = true
 
@@ -295,6 +311,10 @@ const loadClinicalConditions = async () => {
   }
 }
 
+/**
+ * Abre o diálogo do formulário em modo cadastro, com campos vazios.
+ * Não faz nada se o usuário não puder gerenciar o catálogo (`canManage`).
+ */
 const openCreate = () => {
   if (!canManage)
     return
@@ -303,6 +323,10 @@ const openCreate = () => {
   formDialog.value = true
 }
 
+/**
+ * Abre o diálogo do formulário em modo edição, preenchido com a condição escolhida.
+ * Não faz nada se o usuário não puder gerenciar o catálogo (`canManage`).
+ */
 const openEdit = item => {
   if (!canManage)
     return
@@ -316,6 +340,9 @@ const openEdit = item => {
   formDialog.value = true
 }
 
+/**
+ * Fecha o diálogo do formulário e limpa a validação; não fecha enquanto estiver salvando.
+ */
 const closeForm = () => {
   if (saving.value)
     return
@@ -324,6 +351,11 @@ const closeForm = () => {
   formRef.value?.resetValidation()
 }
 
+/**
+ * Valida o formulário e salva a condição clínica: chama `clinicalConditionsApi.update`
+ * (payload com id) se estiver editando ou `clinicalConditionsApi.create` (sem id) se for nova.
+ * Se der certo, fecha o diálogo e recarrega a tabela.
+ */
 const submit = async () => {
   const validation = await formRef.value?.validate()
 
@@ -370,6 +402,10 @@ const submit = async () => {
   }
 }
 
+/**
+ * Guarda a condição escolhida e abre o diálogo de confirmação de exclusão
+ * (só se o usuário puder gerenciar o catálogo).
+ */
 const openDelete = item => {
   if (!canManage)
     return
@@ -378,6 +414,9 @@ const openDelete = item => {
   deleteDialog.value = true
 }
 
+/**
+ * Exclui a condição clínica selecionada (`clinicalConditionsApi.remove`), fecha o diálogo e recarrega a tabela.
+ */
 const removeClinicalCondition = async () => {
   if (!selectedClinicalCondition.value?.id)
     return
@@ -401,5 +440,6 @@ const removeClinicalCondition = async () => {
   }
 }
 
+// Ao abrir a tela, carrega a lista de condições clínicas.
 onMounted(loadClinicalConditions)
 </script>

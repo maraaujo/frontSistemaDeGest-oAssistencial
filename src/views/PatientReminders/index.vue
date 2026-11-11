@@ -141,10 +141,16 @@ const headers = [
   { title: "Tempo restante", key: "minutesRemaining", sortable: true },
 ]
 
+// Lista de lembretes com os minutos restantes recalculados pelo relógio local (liveMinutes), ordenada da dose mais próxima para a mais distante (sem horário vai para o fim).
 const sortedReminders = computed(() => listPatientReminders.value
   .map(item => ({ ...item, liveMinutes: minutesUntilDose(item, now.value) }))
   .sort((a, b) => (a.liveMinutes ?? Infinity) - (b.liveMinutes ?? Infinity)))
 
+/**
+ * Busca os próximos medicamentos a administrar (`medicationAdministrationsApi.getMedicineReminders`),
+ * aceitando vários formatos de resposta para encontrar a lista, e registra o horário
+ * da última atualização. Em erro, mostra toast.
+ */
 const getPatientReminders = async () => {
   try {
     loading.value = true
@@ -177,6 +183,9 @@ const getPatientReminders = async () => {
   }
 }
 
+/**
+ * Liga ou desliga o modo tela cheia do navegador (útil para deixar o painel em um monitor).
+ */
 const toggleFullscreen = async () => {
   try {
     if (!document.fullscreenElement)
@@ -188,6 +197,9 @@ const toggleFullscreen = async () => {
   }
 }
 
+/**
+ * Formata data e hora no padrão "dd/mm, HH:mm" (sem ano); retorna "-" se vazio.
+ */
 const formatDateTime = value => {
   if (!value) return "-"
 
@@ -199,8 +211,16 @@ const formatDateTime = value => {
   })
 }
 
+/**
+ * Exibe só "HH:mm" de um horário em texto; se não for texto, retorna "-".
+ */
 const formatTime = value => typeof value === "string" ? value.substring(0, 5) : "-"
 
+/**
+ * Define a cor do indicador de tempo restante: cinza sem horário, vermelho se
+ * atrasado, amarelo se faltam até 15 minutos e verde nos demais casos.
+ * @param {number|null} minutesRemaining Minutos até a próxima dose (negativo = atrasado).
+ */
 const getReminderColor = minutesRemaining => {
   if (minutesRemaining === null || minutesRemaining === undefined) return "grey"
   if (minutesRemaining < 0) return "error"
@@ -208,6 +228,7 @@ const getReminderColor = minutesRemaining => {
   return "success"
 }
 
+// Ao abrir a tela, busca os lembretes e inicia os timers de atualização (API e contagem local).
 onMounted(() => {
   getPatientReminders()
 
@@ -218,6 +239,7 @@ onMounted(() => {
   clockInterval = window.setInterval(() => { now.value = Date.now() }, 5_000)
 })
 
+// Ao sair da tela, para os dois timers para não continuar buscando/atualizando em segundo plano.
 onBeforeUnmount(() => {
   window.clearInterval(refreshInterval)
   window.clearInterval(clockInterval)

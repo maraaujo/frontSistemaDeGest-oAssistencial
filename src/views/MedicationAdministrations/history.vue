@@ -167,8 +167,15 @@ const listPatient = ref([])
 const filtermodel = ref({})
 const paginationData = ref({ page: 1, totalPages: 1, perPage: 15, count: 0 })
 
+/**
+ * Extrai o conteúdo útil da resposta da API (`data.data`, senão `data`).
+ */
 const getData = response => response?.data?.data ?? response?.data
 
+/**
+ * Normaliza o valor para array: aceita array puro, o formato `$values` do .NET
+ * ou um objeto único (vira array de um item); vazio vira [].
+ */
 const getList = value => {
   if (Array.isArray(value))
     return value
@@ -179,6 +186,9 @@ const getList = value => {
   return value ? [value] : []
 }
 
+/**
+ * Formata data e hora no padrão brasileiro (dd/mm/aaaa hh:mm:ss); retorna "-" se vazia.
+ */
 const formatDateTime = value => {
   if (!value)
     return '-'
@@ -197,6 +207,10 @@ const formatNextDose = item => {
   return typeof item.administrationTime === 'string' ? item.administrationTime.slice(0, 5) : '-'
 }
 
+/**
+ * Busca todos os medicamentos (`medicinesApi.getAll`) para o filtro por medicamento.
+ * Em erro, apenas registra no console.
+ */
 const loadMedicines = async () => {
   try {
     listMedicine.value = getList(getData(await medicinesApi.getAll()))
@@ -205,6 +219,10 @@ const loadMedicines = async () => {
   }
 }
 
+/**
+ * Busca todos os acolhidos (`patientsApi.getAll`) para o filtro por acolhido.
+ * Em erro, apenas registra no console.
+ */
 const loadPatients = async () => {
   try {
     listPatient.value = getList(getData(await patientsApi.getAll()))
@@ -213,6 +231,11 @@ const loadPatients = async () => {
   }
 }
 
+/**
+ * Busca a página atual do histórico de administrações com os filtros
+ * (`medicationAdministrationsApi.filter`). Aceita vários formatos de resposta para
+ * achar a lista (garantindo `patientName`) e os dados de paginação. Em erro, limpa e mostra toast.
+ */
 const loadItems = async () => {
   loading.value = true
 
@@ -284,11 +307,18 @@ const loadItems = async () => {
   }
 }
 
+/**
+ * Aplica os filtros: volta para a página 1 e recarrega o histórico.
+ */
 const search = async () => {
   paginationData.value.page = 1
   await loadItems()
 }
 
+/**
+ * Vai para a página informada e recarrega o histórico; ignora páginas fora do intervalo.
+ * @param {number} page Número da nova página.
+ */
 const changePage = async page => {
   if (page < 1 || page > paginationData.value.totalPages)
     return
@@ -297,6 +327,7 @@ const changePage = async page => {
   await loadItems()
 }
 
+// Ao abrir a tela, carrega o histórico e as opções dos filtros (medicamentos e acolhidos).
 onMounted(() => {
   loadItems()
   loadMedicines()

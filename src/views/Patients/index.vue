@@ -255,8 +255,15 @@ const headers = [
   { title: 'Ações', key: 'actions', sortable: false },
 ]
 
+/**
+ * Extrai o conteúdo útil da resposta da API (`data.data`, senão `data`).
+ */
 const getResponseData = response => response?.data?.data ?? response?.data
 
+/**
+ * Busca todas as condições clínicas (`clinicalConditionsApi.getAll`) para o
+ * filtro de condição da listagem. Em erro, mostra toast e retorna [].
+ */
 const getAllConditions = async () => {
   try {
     const ret = await clinicalConditionsApi.getAll()
@@ -271,6 +278,10 @@ const getAllConditions = async () => {
   }
 }
 
+/**
+ * Busca todos os acolhidos (`patientsApi.getAll`) para preencher as opções do
+ * filtro por acolhido. Em erro, apenas registra no console (sem aviso na tela).
+ */
 const getAllPatients = async () => {
   try {
     const ret = await patientsApi.getAll()
@@ -282,6 +293,11 @@ const getAllPatients = async () => {
   }
 }
 
+/**
+ * Busca a página atual de acolhidos com os filtros preenchidos (`patientsApi.filter`),
+ * convertendo a condição clínica para texto. Atualiza a tabela e os dados de
+ * paginação (página, total, total de páginas e itens por página).
+ */
 const getPatients = async () => {
   loading.value = true
 
@@ -317,11 +333,17 @@ const getPatients = async () => {
   }
 }
 
+/**
+ * Aplica os filtros: volta para a página 1 e refaz a busca de acolhidos.
+ */
 const submit = async () => {
   paginationData.value.page = 1
   await getPatients()
 }
 
+/**
+ * Limpa todos os filtros, volta para a página 1 e recarrega a listagem.
+ */
 const cleanFilters = async () => {
   filterModel.value = {
     page: 1,
@@ -337,6 +359,9 @@ const cleanFilters = async () => {
   await getPatients()
 }
 
+/**
+ * Navega para a tela de detalhes do acolhido selecionado.
+ */
 const openDetails = item => {
   router.push({
     name: 'patient-details',
@@ -344,6 +369,9 @@ const openDetails = item => {
   })
 }
 
+/**
+ * Navega para a tela de edição do acolhido selecionado.
+ */
 const openEdit = item => {
   router.push({
     name: 'patient-update',
@@ -351,6 +379,9 @@ const openEdit = item => {
   })
 }
 
+/**
+ * Navega para a tela de medicamentos programados, passando o id do acolhido na query (`patientId`).
+ */
 const openMedicines = item => {
   router.push({
     name: 'patient-medicines',
@@ -358,6 +389,9 @@ const openMedicines = item => {
   })
 }
 
+/**
+ * Formata uma data no padrão brasileiro (dd/mm/aaaa); retorna "-" se vazia.
+ */
 const formatDate = value => {
   if (!value)
     return '-'
@@ -367,6 +401,7 @@ const formatDate = value => {
   return date.toLocaleDateString('pt-BR')
 }
 
+// Ao abrir a tela, carrega a listagem de acolhidos e as opções dos filtros (condições e acolhidos).
 onMounted(() => {
   getPatients(),
   getAllConditions(),

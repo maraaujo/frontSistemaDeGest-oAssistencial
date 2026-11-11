@@ -215,11 +215,16 @@ const requiredRules = [
   value => value !== null && value !== undefined && value !== '' || 'Campo obrigatório',
 ]
 
+// Regra do campo data final: se preenchida, não pode ser anterior à data inicial.
 const endDateRules = [
   value => !model.startDate || !value || new Date(value) >= new Date(model.startDate)
     || 'A data final deve ser igual ou posterior à data inicial',
 ]
 
+/**
+ * Converte uma data (Date ou texto) para "aaaa-mm-dd" no fuso local, formato
+ * usado pelo input de data; vazio vira ''.
+ */
 const toDateOnly = value => {
   if (!value) return ''
 
@@ -229,6 +234,10 @@ const toDateOnly = value => {
   return new Date(date.getTime() - offset).toISOString().slice(0, 10)
 }
 
+/**
+ * Converte um horário para "HH:mm" (formato do input de hora): se for texto, corta
+ * os 5 primeiros caracteres; se for data, extrai a hora no fuso local.
+ */
 const toTimeInput = value => {
   if (!value) return ''
 
@@ -241,6 +250,11 @@ const toTimeInput = value => {
   return new Date(date.getTime() - offset).toISOString().slice(11, 16)
 }
 
+/**
+ * Extrai uma lista da resposta da API tentando os formatos possíveis: array direto,
+ * `data.data`, propriedades como `items`/`patients`/`medicines`/`employees` ou `$values`.
+ * Retorna [] se nada for encontrado.
+ */
 const extractList = response => {
   const data = response?.data
   const nestedData = data?.data
@@ -264,6 +278,10 @@ const extractList = response => {
   return list?.$values ?? []
 }
 
+/**
+ * Define o texto exibido para uma condição clínica do acolhido, usando o primeiro
+ * nome/descrição disponível ou "Condição #id" como último recurso.
+ */
 const getConditionTitle = item => {
   return item.clinicalConditionName
     ?? item.clinicalCondition?.name
@@ -273,6 +291,11 @@ const getConditionTitle = item => {
     ?? `Condição #${item.id}`
 }
 
+/**
+ * Busca as condições clínicas do acolhido informado (`patientClinicalConditionsApi.filter`,
+ * página 1) e monta as opções do select. Sem acolhido, limpa a lista. Em erro, mostra toast.
+ * @param {number} patientId Id do acolhido.
+ */
 const loadPatientConditions = async patientId => {
   if (!patientId) {
     patientConditionOptions.value = []
@@ -301,6 +324,10 @@ const loadPatientConditions = async patientId => {
   }
 }
 
+/**
+ * Chamada ao trocar o acolhido: atualiza o modelo, limpa a condição clínica
+ * escolhida e recarrega as condições do novo acolhido.
+ */
 const onPatientSelected = async patientId => {
   model.patientId = patientId
   model.patientClinicalConditionId = null
@@ -308,6 +335,10 @@ const onPatientSelected = async patientId => {
   await loadPatientConditions(patientId)
 }
 
+/**
+ * Busca em paralelo medicamentos, funcionários e acolhidos e monta as opções dos
+ * selects. Usa allSettled: preenche o que deu certo e, se alguma falhar, mostra aviso em `loadError`.
+ */
 const loadOptions = async () => {
   const requests = await Promise.allSettled([
     medicinesApi.getAll(),
@@ -343,6 +374,11 @@ const loadOptions = async () => {
   }
 }
 
+/**
+ * Busca a prescrição (medicamento programado) pelo id da rota e preenche o formulário,
+ * convertendo datas e horário para o formato dos inputs. Lança erro se não encontrar.
+ * @returns {Promise<object>} O registro retornado pela API.
+ */
 const loadMedicinePatientClinicalCondition = async () => {
   const response = await medicinePatientClinicalConditionsApi.getById(route.params.id)
   const record = response?.data?.data ?? response?.data
@@ -365,6 +401,11 @@ const loadMedicinePatientClinicalCondition = async () => {
   return record
 }
 
+/**
+ * Carrega a tela de edição: primeiro a prescrição, depois as opções dos selects e as
+ * condições do acolhido. Se a condição da prescrição não vier na lista, adiciona-a
+ * manualmente para continuar selecionada. Em erro, preenche `loadError`.
+ */
 const loadData = async () => {
   loading.value = true
   loadError.value = ''
@@ -394,6 +435,11 @@ const loadData = async () => {
   }
 }
 
+/**
+ * Valida o formulário e envia a prescrição atualizada para
+ * `medicinePatientClinicalConditionsApi.update` (horário em HH:mm:ss, início = data
+ * inicial + horário, fim = data final às 23:59:59). Se der certo, volta para a listagem.
+ */
 const submit = async () => {
   const validation = await formRef.value?.validate()
 
@@ -443,5 +489,6 @@ const submit = async () => {
   }
 }
 
+// Ao abrir a tela, carrega a prescrição e as opções do formulário.
 onMounted(loadData)
 </script>

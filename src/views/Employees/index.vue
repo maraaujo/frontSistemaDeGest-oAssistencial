@@ -221,8 +221,17 @@ const headers = [
   { title: 'Ações', key: 'actions', sortable: false },
 ]
 
+/**
+ * Extrai o conteúdo útil da resposta do axios: usa `data.data` quando a API
+ * embrulha o retorno e, se não houver, o próprio `data`.
+ */
 const getResponseData = response => response?.data?.data ?? response?.data
 
+/**
+ * Busca os funcionários com os filtros (nome, CPF, telefone) e a página atual
+ * (POST /Employee/GetEmployeeByFilter). Preenche a tabela e atualiza os dados de paginação
+ * com o que o backend devolveu. Mostra um aviso se falhar.
+ */
 const getEmployees = async () => {
   loading.value = true
 
@@ -251,11 +260,17 @@ const getEmployees = async () => {
   }
 }
 
+/**
+ * Botão "Pesquisar": volta para a página 1 e busca os funcionários com os filtros preenchidos.
+ */
 const submit = async () => {
   paginationData.value.page = 1
   await getEmployees()
 }
 
+/**
+ * Limpa os filtros, volta para a página 1 e recarrega a lista completa.
+ */
 const cleanFilters = async () => {
   filterModel.value = {
     page: 1,
@@ -269,6 +284,9 @@ const cleanFilters = async () => {
   await getEmployees()
 }
 
+/**
+ * Abre a tela de detalhes do funcionário escolhido (rota employees-details).
+ */
 const openDetails = item => {
   router.push({
     name: 'employees-details',
@@ -276,6 +294,9 @@ const openDetails = item => {
   })
 }
 
+/**
+ * Abre a tela de edição do funcionário escolhido (rota employees-update).
+ */
 const openEdit = item => {
   router.push({
     name: 'employees-update',
@@ -283,6 +304,7 @@ const openEdit = item => {
   })
 }
 
+// Ao abrir a tela, carrega a primeira página de funcionários.
 onMounted(() => {
   getEmployees()
 })

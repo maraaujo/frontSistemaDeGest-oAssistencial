@@ -138,6 +138,9 @@ const modules = [
 
 ]
 
+/**
+ * Navega para a tela do módulo clicado, usando o nome da rota (ex.: "patients").
+ */
 const goTo = route => router.push({ name: route })
 </script>
 

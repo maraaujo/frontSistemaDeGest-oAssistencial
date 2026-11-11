@@ -3,17 +3,30 @@ import auth from '@/auth';
 
 
 
+// Definição das rotas do front. Cada tela é carregada sob demanda (import dinâmico),
+// gerando um arquivo JS (chunk) separado no build.
+// Metas usadas:
+//   - requiresAuth: exige usuário logado (ver o beforeEach abaixo);
+//   - superAdmin: exclusiva do administrador da plataforma (usuário sem institutionId);
+//   - layout: 'content' (com menu lateral e barra superior) ou 'blank' (tela limpa).
 const router = createRouter({
   history: createWebHistory(),
+
+  /** Ao trocar de rota, rola a página suavemente para o topo. */
   scrollBehavior: () => {
     // always scroll to top
     return { top: 0, behavior: 'smooth' }
   },
   routes: [
+    // Raiz: manda para o login (que, se já houver sessão, segue para os lembretes).
     {
       path: '/',
       redirect: '/login',
     },
+
+    // Telas internas da instituição (exigem login): início, dashboard, lembretes de
+    // medicação, medicamentos programados, acolhidos, cadastros auxiliares, funcionários,
+    // histórico/relatório de administração, agendamentos, assistente interno.
     {
       path: '/home',
       name: 'home',
@@ -158,6 +171,7 @@ const router = createRouter({
   meta: { requiresAuth: true, layout: 'content', },
 },
 {
+  // Versão para impressão/PDF do relatório diário: usa layout 'blank' (sem menu).
   path: '/daily-medication-report/print',
   name: 'daily-medication-report-print',
   component: () => import('@/views/MedicationAdministrations/daily-report-print.vue'),
@@ -187,6 +201,9 @@ const router = createRouter({
   component: () => import('@/views/InternalAgent/index.vue'),
   meta: { requiresAuth: true, layout: 'content', },
 },
+
+// Seção "Administração" (meta superAdmin): painel da plataforma e gestão de contas de
+// acesso, visíveis só para o administrador da plataforma (sem instituição vinculada).
 {
   path: '/admin/overview',
   name: 'admin-overview',
@@ -205,12 +222,17 @@ const router = createRouter({
   component: () => import('@/views/AdminAccounts/Create.vue'),
   meta: { requiresAuth: true, superAdmin: true, layout: 'content', },
 },
+
+// Perfil do usuário logado (acessado pelo menu do avatar).
 {
   path: '/profile',
   name: 'profile',
   component: () => import('@/views/Profile/index.vue'),
   meta: { requiresAuth: true, layout: 'content', },
 },
+
+    // Telas públicas (sem requiresAuth, layout 'blank'): login, esqueci a senha e a
+    // página 404, que captura qualquer caminho não reconhecido (pathMatch).
     {
       path: '/login',
       name: 'login',
@@ -241,6 +263,14 @@ const router = createRouter({
 // Guard de autenticação: bloqueia rotas com `requiresAuth` quando não há sessão
 // (token em sessionStorage). Ao chegar deslogado, redireciona para o login
 // preservando o destino em `redirect`. Usuário já logado não vê login/registro.
+/**
+ * Executado antes de cada navegação. Na ordem:
+ * 1) rota com requiresAuth e sem sessão -> vai para o login (com ?redirect=destino);
+ * 2) rota com superAdmin e usuário com institutionId -> vai para 'home';
+ * 3) usuário logado indo para o login -> vai para 'patient-reminders';
+ * caso contrário, libera a navegação (return true).
+ * @param {import('vue-router').RouteLocationNormalized} to - rota de destino
+ */
 router.beforeEach(to => {
   const isLoggedIn = auth.loggedIn()
 
@@ -266,6 +296,12 @@ router.beforeEach(to => {
 // Após um novo deploy, uma aba já aberta pode tentar carregar um chunk JS antigo
 // (hash de build anterior) e falhar silenciosamente ao trocar de rota. Nesse caso,
 // força um reload completo para pegar o build atual em vez de deixar a tela em branco.
+/**
+ * Trata erros de navegação. Se a mensagem indicar falha ao carregar um chunk (módulo
+ * dinâmico), recarrega a página no destino (window.location) uma única vez: a marca
+ * 'chunk-reload-attempted' no sessionStorage impede um loop de recarregamentos.
+ * Outros erros são ignorados aqui.
+ */
 router.onError((error, to) => {
   const message = error?.message ?? ''
   const isChunkLoadError = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(message)
@@ -280,6 +316,10 @@ router.onError((error, to) => {
   }
 })
 
+/**
+ * Após cada navegação concluída, apaga a marca 'chunk-reload-attempted', para que um
+ * novo erro de chunk (num deploy futuro) possa disparar o reload novamente.
+ */
 router.afterEach(() => {
   sessionStorage.removeItem('chunk-reload-attempted')
 })

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 
+// Props: série mensal de faturamento (month, amount) e estados de carregamento/erro; emite "retry" para tentar de novo.
 const props = defineProps({
   data: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
@@ -10,10 +11,15 @@ const props = defineProps({
 
 const emit = defineEmits(['retry'])
 
+/**
+ * Formata um valor como moeda brasileira (ex.: R$ 1.234,56); vazio vira R$ 0,00.
+ */
 const formatCurrency = value => Number(value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
+// Série única do gráfico com o faturamento (amount) de cada mês.
 const series = computed(() => [{ name: 'Faturamento', data: props.data.map(item => item.amount) }])
 
+// Configuração do ApexCharts: gráfico de área suavizado com os meses no eixo X e valores em reais no eixo Y.
 const chartOptions = computed(() => ({
   chart: { type: 'area', toolbar: { show: false }, fontFamily: 'Roboto, sans-serif' },
   colors: ['rgba(var(--v-theme-primary), 1)'],

@@ -289,10 +289,17 @@ const listPatients = ref([])
 const filtermodel = ref({ date: getToday(), patientId: null })
 let requestId = 0
 
+// Totais do relatório por status (ex.: administrados, atrasados), calculados a partir dos itens.
 const summary = computed(() => summarizeByStatus(items.value))
+
+// Itens do relatório agrupados por acolhido, para exibir um bloco por pessoa.
 const groupedItems = computed(() => groupByPatient(items.value))
 
 // Abre a versão para impressão na mesma aba (o token fica no sessionStorage da aba)
+/**
+ * Navega para a página de impressão do relatório, levando na URL a data (ou hoje)
+ * e, se escolhido, o acolhido filtrado.
+ */
 const generatePdf = () => {
   const query = { date: filtermodel.value.date || getToday() }
 
@@ -302,6 +309,11 @@ const generatePdf = () => {
   router.push({ name: 'daily-medication-report-print', query })
 }
 
+/**
+ * Busca o relatório de medicamentos do dia (`getDailyMedicationReport`) com a data e o
+ * acolhido do filtro. Usa um contador de requisições para descartar respostas antigas
+ * quando o filtro muda rápido. Em erro, limpa os itens e mostra toast.
+ */
 const loadReport = async () => {
   const currentRequest = ++requestId
 
@@ -333,6 +345,10 @@ const loadReport = async () => {
   }
 }
 
+/**
+ * Busca todos os acolhidos (`patientsApi.getAll`) para o filtro por acolhido.
+ * Em erro, apenas registra no console.
+ */
 const loadPatients = async () => {
   loadingPatients.value = true
 
@@ -348,8 +364,10 @@ const loadPatients = async () => {
   }
 }
 
+// Observa a data e o acolhido do filtro e recarrega o relatório sempre que um deles muda.
 watch(() => [filtermodel.value.date, filtermodel.value.patientId], loadReport)
 
+// Ao abrir a tela, carrega o relatório de hoje e a lista de acolhidos do filtro.
 onMounted(() => {
   loadReport()
   loadPatients()

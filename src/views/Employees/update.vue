@@ -185,10 +185,17 @@ const requiredRules = [
   v => !!v || 'Este campo é obrigatório',
 ]
 
+/**
+ * Regra de validação do e-mail: aceita campo vazio (opcional) ou um e-mail no formato nome@dominio.ext.
+ */
 const emailRule = v => {
   return !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'E-mail inválido'
 }
 
+/**
+ * Busca os departamentos (GET /Department/GetAllDepartments) para o campo de seleção.
+ * Só aceita o retorno se for uma lista; caso contrário, deixa a lista vazia. Mostra um aviso se falhar.
+ */
 const loadDepartments = async () => {
   loadingDepartments.value = true
   try {
@@ -203,6 +210,11 @@ const loadDepartments = async () => {
   }
 }
 
+/**
+ * Busca o funcionário do id da URL (GET /Employee/GetEmployeeById/{id}) e preenche o formulário,
+ * deixando a data de admissão no formato aaaa-mm-dd e aplicando máscara em CPF e telefone.
+ * Se falhar, mostra um aviso e volta para a lista.
+ */
 const loadEmployee = async () => {
   try {
     const response = await employeesApi.getById(route.params.id)
@@ -227,6 +239,10 @@ const loadEmployee = async () => {
   }
 }
 
+/**
+ * Valida o formulário e atualiza o funcionário (PUT /Employee/Update/{id}), enviando uma cópia do model
+ * (CPF e telefone vão com a máscara aplicada na tela). Em caso de sucesso, volta para a lista.
+ */
 const submit = async () => {
   const { valid } = await formRef.value.validate()
 
@@ -255,6 +271,7 @@ const submit = async () => {
   }
 }
 
+// Ao abrir a tela, carrega primeiro os departamentos e depois os dados do funcionário.
 onMounted(async () => {
   await loadDepartments()
   await loadEmployee()

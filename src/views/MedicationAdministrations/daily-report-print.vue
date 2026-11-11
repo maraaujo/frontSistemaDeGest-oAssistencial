@@ -151,9 +151,13 @@ const error = ref(false)
 const items = ref([])
 const generatedAt = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 
+// Totais do relatório por status (ex.: administrados, atrasados), calculados a partir dos itens.
 const summary = computed(() => summarizeByStatus(items.value))
+
+// Itens do relatório agrupados por acolhido, para imprimir um bloco por pessoa.
 const groupedItems = computed(() => groupByPatient(items.value))
 
+// Texto do filtro de acolhido no cabeçalho: "Todos", o nome do acolhido (do 1º item) ou "#id".
 const patientLabel = computed(() => {
   if (!patientId)
     return 'Todos'
@@ -161,8 +165,14 @@ const patientLabel = computed(() => {
   return items.value[0]?.patientName || `#${patientId}`
 })
 
+/**
+ * Abre a janela de impressão do navegador (onde dá para "Salvar como PDF").
+ */
 const print = () => window.print()
 
+/**
+ * Volta para a página anterior do histórico; se não houver, vai para o relatório do dia.
+ */
 const goBack = () => {
   if (window.history.state?.back)
     router.back()
@@ -170,6 +180,10 @@ const goBack = () => {
     router.push({ name: 'daily-medication-report' })
 }
 
+/**
+ * Busca o relatório de medicamentos do dia (`getDailyMedicationReport`) com a data e o
+ * acolhido vindos da URL. Em erro, limpa os itens e marca `error` (o que impede a impressão automática).
+ */
 const loadReport = async () => {
   loading.value = true
   error.value = false
@@ -187,6 +201,7 @@ const loadReport = async () => {
 
 const previousTitle = document.title
 
+// Ao abrir a tela, troca o título da aba, carrega o relatório e, se não houver erro, abre a impressão automaticamente.
 onMounted(async () => {
   // O título vira o nome sugerido do arquivo ao "Salvar como PDF"
   document.title = `relatorio-medicamentos-${date}${patientId ? `-${patientLabel.value}` : ''}`
@@ -199,6 +214,7 @@ onMounted(async () => {
   }
 })
 
+// Ao sair da tela, restaura o título original da aba.
 onBeforeUnmount(() => { document.title = previousTitle })
 </script>
 

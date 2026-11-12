@@ -101,19 +101,7 @@
 
                     <VCol
                       cols="12"
-                      md="4"
-                    >
-                      <VTextField
-                        v-model="model.phone"
-                        label="Telefone"
-                        placeholder="(00) 00000-0000"
-                        :rules="phoneRules()"
-                      />
-                    </VCol>
-
-                    <VCol
-                      cols="12"
-                      md="4"
+                      md="6"
                     >
                       <VTextField
                         v-model="model.cpf"
@@ -125,7 +113,7 @@
 
                     <VCol
                       cols="12"
-                      md="4"
+                      md="6"
                     >
                       <VAutocomplete
                         v-model="model.bloodTypeId"
@@ -641,7 +629,6 @@ const model = ref({
   id: 0,
   name: '',
   birthDate: '',
-  phone: '',
   document: '',
   gender: '',
   cpf: '',
@@ -918,7 +905,9 @@ const submit = async () => {
       id: 0,
       name: model.value.name.trim(),
       birthDate: new Date(`${model.value.birthDate}T00:00:00`).toISOString(),
-      phone: model.value.phone?.trim() || '',
+      // O acolhido não tem telefone próprio (o contato é o dos responsáveis); o campo
+      // segue vazio no envio só porque o DTO do backend ainda o declara.
+      phone: '',
       document: model.value.document?.trim() || '',
       gender: model.value.gender,
       cpf: model.value.cpf?.trim() || '',

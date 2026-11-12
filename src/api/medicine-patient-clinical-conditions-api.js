@@ -18,11 +18,15 @@ const remove = async (id) => await apiService.delete(`/MedicinePatientClinicalCo
 /** Busca medicamentos programados conforme os critérios do filtro (POST /MedicinePatientClinicalCondition/GetMedicinePatientClinicalConditionByFilter). */
 const filter = async (filter) => await apiService.post('/MedicinePatientClinicalCondition/GetMedicinePatientClinicalConditionByFilter', filter);
 
+/** Exclusão em massa (global) de todos os medicamentos programados e das administrações ligadas. Restrita ao admin da plataforma no backend (DELETE /MedicinePatientClinicalCondition/DeleteAll). */
+const deleteAll = async () => await apiService.delete('/MedicinePatientClinicalCondition/DeleteAll');
+
 export const medicinePatientClinicalConditionsApi = {
   getAll,
   getById,
   create,
   update,
   remove,
-  filter
+  filter,
+  deleteAll
 };

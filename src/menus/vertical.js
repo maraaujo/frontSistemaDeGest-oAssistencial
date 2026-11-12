@@ -77,4 +77,9 @@ export default [
     icon: 'mdi-account-key-outline',
     to: { name: 'admin-accounts' },
   },
+  {
+    name: 'Manutenção de dados',
+    icon: 'mdi-broom',
+    to: { name: 'admin-maintenance' },
+  },
 ]

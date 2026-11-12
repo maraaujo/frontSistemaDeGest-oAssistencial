@@ -229,6 +229,13 @@ const router = createRouter({
   component: () => import('@/views/AdminAccounts/Create.vue'),
   meta: { requiresAuth: true, superAdmin: true, layout: 'content', },
 },
+{
+  // Manutenção de dados: limpeza global (exclusiva do admin da plataforma).
+  path: '/admin/maintenance',
+  name: 'admin-maintenance',
+  component: () => import('@/views/AdminMaintenance/index.vue'),
+  meta: { requiresAuth: true, superAdmin: true, layout: 'content', },
+},
 
 // Perfil do usuário logado (acessado pelo menu do avatar).
 {

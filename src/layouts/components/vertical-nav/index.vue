@@ -43,7 +43,7 @@ const visibleVerticalItems = computed(() => {
 
   return verticalItems.filter(item =>
     item.heading !== 'Administração'
-    && !['admin-overview', 'admin-accounts'].includes(item.to?.name),
+    && !(item.to?.name ?? '').startsWith('admin-'),
   )
 })
 

@@ -946,8 +946,10 @@ const submit = async () => {
         frequency: medicine.frequency,
         administrationTime: medicine.administrationTime?.length === 5 ? `${medicine.administrationTime}:00` : medicine.administrationTime,
         responsibleEmployeeId: Number(medicine.responsibleEmployeeId) || 0,
-        startDate: medicine.startDate ? new Date(`${medicine.startDate}T00:00:00`).toISOString() : null,
-        endDate: medicine.endDate ? new Date(`${medicine.endDate}T00:00:00`).toISOString() : null,
+        // Datas no horário de parede (sem converter para UTC): o backend guarda o
+        // horário local, e o fim do período vale até o último segundo do dia.
+        startDate: medicine.startDate ? `${medicine.startDate}T00:00:00` : null,
+        endDate: medicine.endDate ? `${medicine.endDate}T23:59:59` : null,
         observations: medicine.observations,
       })),
     }

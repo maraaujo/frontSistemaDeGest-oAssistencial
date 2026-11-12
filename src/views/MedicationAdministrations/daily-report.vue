@@ -112,6 +112,17 @@
               />
               Pendentes: {{ summary.Pendente }}
             </VChip>
+            <VChip
+              v-if="summary.NaoAdministrado"
+              color="warning"
+              variant="tonal"
+            >
+              <VIcon
+                start
+                icon="mdi-close-circle-outline"
+              />
+              Não administrados: {{ summary.NaoAdministrado }}
+            </VChip>
           </div>
         </VCardText>
 

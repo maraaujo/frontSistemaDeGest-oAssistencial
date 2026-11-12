@@ -36,13 +36,21 @@ export const formatTime = (value, fallback) => {
 }
 
 /**
+ * Situações em que a dose foi registrada, mas NÃO foi dada ao acolhido
+ * (recusa, suspensão, cancelamento). Não contam como "Administrado".
+ */
+export const NOT_GIVEN_STATUSES = ['Não administrado', 'Cancelado']
+
+/**
  * Cor do Vuetify para o chip de situação: "Administrado" = success (verde),
- * "Atrasado" = error (vermelho), qualquer outra (ex.: "Pendente") = secondary.
+ * "Atrasado" = error (vermelho), "Não administrado"/"Cancelado" = warning (laranja),
+ * qualquer outra (ex.: "Pendente") = secondary.
  * @returns {string}
  */
 export const getStatusColor = status => {
   if (status === 'Administrado') return 'success'
   if (status === 'Atrasado') return 'error'
+  if (NOT_GIVEN_STATUSES.includes(status)) return 'warning'
 
   return 'secondary'
 }
@@ -63,17 +71,20 @@ export const getReportList = response => {
 }
 
 /**
- * Conta quantos itens há em cada situação. Situações fora das três conhecidas são ignoradas.
- * @returns {{ Administrado: number, Atrasado: number, Pendente: number }}
+ * Conta quantos itens há em cada situação. "Não administrado" e "Cancelado" são somados
+ * em `NaoAdministrado`; situações desconhecidas são ignoradas.
+ * @returns {{ Administrado: number, Atrasado: number, Pendente: number, NaoAdministrado: number }}
  */
 export const summarizeByStatus = items => items.reduce(
   (acc, item) => {
-    if (item.status in acc)
+    if (NOT_GIVEN_STATUSES.includes(item.status))
+      acc.NaoAdministrado++
+    else if (item.status in acc)
       acc[item.status]++
 
     return acc
   },
-  { Administrado: 0, Atrasado: 0, Pendente: 0 },
+  { Administrado: 0, Atrasado: 0, Pendente: 0, NaoAdministrado: 0 },
 )
 
 // A resposta já vem ordenada por acolhido e horário; o agrupamento preserva essa ordem

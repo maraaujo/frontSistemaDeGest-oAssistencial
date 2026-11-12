@@ -49,7 +49,7 @@
 
         <VDivider />
         <VDataTable :headers="headers" :items="appointments" :loading="loading"
-          loading-text="Carregando agendamentos..." no-data-text="Nenhum agendamento encontrado." class="text-no-wrap">
+          loading-text="Carregando agendamentos..." no-data-text="Nenhum agendamento encontrado." class="text-no-wrap" :items-per-page="-1" hide-default-footer>
           <template #[`item.id`]="{ item }"><strong class="text-primary">#{{ item.id }}</strong></template>
           <template #[`item.dateTime`]="{ item }">{{ formatDateTime(item.dateTime) }}</template>
           <template #[`item.status`]="{ item }">
@@ -72,6 +72,13 @@
             </VMenu>
           </template>
         </VDataTable>
+
+        <VDivider />
+
+        <VCardText class="d-flex justify-center">
+          <VPagination v-model="pagination.page" :length="pagination.totalPages" :total-visible="7" :disabled="loading"
+            @update:model-value="changePage" />
+        </VCardText>
       </VCard>
     </VCol>
   </VRow>
@@ -112,6 +119,9 @@ const statusOptions = ['Pendente', 'Confirmado', 'Realizado', 'Cancelado']
  */
 const emptyFilters = () => ({ patientId: null, employeeId: null, status: null, startDate: '', endDate: '' })
 const filters = ref(emptyFilters())
+
+// Paginação feita pelo servidor (15 por página): a tela pede a página e mostra o total devolvido.
+const pagination = ref({ page: 1, totalPages: 1 })
 
 const headers = [
   { title: 'Id', key: 'id' },
@@ -162,8 +172,9 @@ const loadOptions = async () => {
 const loadAppointments = async () => {
   loading.value = true
   try {
-    const data = dataOf(await appointmentsApi.filter({ ...filters.value }))
+    const data = dataOf(await appointmentsApi.filter({ ...filters.value, page: pagination.value.page }))
     appointments.value = listOf(data, ['appointments', 'appointment']).map(normalize)
+    pagination.value.totalPages = Math.max(1, Number(data?.totalPages) || 1)
   } catch (error) {
     console.error('Erro ao carregar agendamentos:', error)
     appointments.value = []
@@ -174,12 +185,17 @@ const loadAppointments = async () => {
 /**
  * Botão "Pesquisar": recarrega a lista aplicando os filtros preenchidos.
  */
-const search = () => loadAppointments()
+const search = () => { pagination.value.page = 1; loadAppointments() }
+
+/**
+ * Troca a página da listagem e busca os agendamentos dessa página no servidor.
+ */
+const changePage = page => { pagination.value.page = Number(page); loadAppointments() }
 
 /**
  * Limpa todos os filtros e recarrega a lista completa.
  */
-const clearFilters = () => { filters.value = emptyFilters(); loadAppointments() }
+const clearFilters = () => { filters.value = emptyFilters(); pagination.value.page = 1; loadAppointments() }
 
 /**
  * Abre a tela de edição do agendamento escolhido (rota appointments-update).

@@ -1,18 +1,17 @@
 import { createI18n } from 'vue-i18n'
-import ar from './messages/ar'
 import en from './messages/en'
-import fr from './messages/fr'
 import { appConfig } from '@appConfig'
 
+// As telas do sistema já estão escritas em português; o arquivo de mensagens serve
+// apenas aos textos internos dos componentes do Vuetify. Os idiomas de demonstração
+// do template (francês e árabe) foram removidos.
 const messages = {
   en,
-  fr,
-  ar,
 }
 
 export default createI18n({
   legacy: false,
-  locale: localStorage.getItem('app-locale') || appConfig.defaultLocale.value,
+  locale: appConfig.defaultLocale.value,
   fallbackLocale: 'en',
   messages,
 })

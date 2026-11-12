@@ -10,11 +10,69 @@
  * This example uses Iconify Tools to import and clean up icons.
  * For Iconify Tools documentation visit https://docs.iconify.design/tools/tools2/
  */
-import { promises as fs } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { promises as fs, readFileSync, readdirSync } from 'node:fs';
+import { dirname, extname, join } from 'node:path';
 // Installation: npm install --save-dev @iconify/tools @iconify/utils @iconify/json @iconify/iconify
 import { cleanupSVG, importDirectory, isEmptyColor, parseColors, runSVGO } from '@iconify/tools';
 import { getIcons, getIconsCSS, stringToIcon } from '@iconify/utils';
+
+/**
+ * Ícones MDI realmente usados pelo sistema.
+ *
+ * O conjunto completo do Material Design Icons tem mais de 7 mil ícones e gerava um
+ * CSS de ~3,7 MB carregado na primeira tela. Aqui o script procura por "mdi-nome" em
+ * todo o código de `src/` e gera o CSS só com esses ícones (mais os que o Vuetify usa
+ * internamente: setas, checkbox, fechar, paginação...).
+ *
+ * Um ícone novo passa a valer automaticamente no próximo `npm run build:icons`
+ * (que também roda no `npm install`), desde que o nome apareça por extenso no código.
+ * Ícone com nome montado em tempo de execução deve ser listado em EXTRA_ICONS.
+ */
+const EXTRA_ICONS = [];
+
+// Ícones dos atalhos internos do Vuetify (vuetify/lib/iconsets/mdi): usados por
+// componentes como VSelect, VCheckbox, VPagination, VDataTable, VAlert e VRating.
+const VUETIFY_ICONS = [
+    'chevron-up', 'check', 'close-circle', 'close', 'check-circle', 'information', 'alert-circle',
+    'chevron-left', 'chevron-right', 'checkbox-marked', 'checkbox-blank-outline', 'minus-box', 'circle',
+    'arrow-up', 'arrow-down', 'chevron-down', 'menu', 'menu-down', 'menu-right', 'radiobox-marked',
+    'radiobox-blank', 'pencil', 'star-outline', 'star', 'star-half-full', 'cached', 'page-first',
+    'page-last', 'unfold-more-horizontal', 'paperclip', 'plus', 'minus', 'calendar', 'eyedropper',
+    'cloud-upload',
+];
+
+const SCANNED_EXTENSIONS = ['.vue', '.js', '.ts', '.scss', '.css', '.html'];
+
+function collectUsedMdiIcons() {
+    const srcDir = join(__dirname, '..', '..');
+    const generatedCss = join(__dirname, 'icons.css');
+    const names = new Set([...VUETIFY_ICONS, ...EXTRA_ICONS]);
+
+    const walk = dir => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+            const fullPath = join(dir, entry.name);
+            if (entry.isDirectory()) {
+                walk(fullPath);
+                continue;
+            }
+            if (fullPath === generatedCss || !SCANNED_EXTENSIONS.includes(extname(entry.name)))
+                continue;
+            for (const match of readFileSync(fullPath, 'utf8').matchAll(/\bmdi-([a-z0-9]+(?:-[a-z0-9]+)*)/g))
+                names.add(match[1]);
+        }
+    };
+    walk(srcDir);
+
+    // Mantém só os nomes que existem no conjunto (descarta textos como "mdi-icon").
+    const iconSet = JSON.parse(readFileSync(require.resolve('@iconify-json/mdi/icons.json'), 'utf8'));
+    const aliases = iconSet.aliases ?? {};
+
+    return [...names].filter(name => name in iconSet.icons || name in aliases).sort();
+}
+
+const usedMdiIcons = collectUsedMdiIcons();
+console.log(`Ícones MDI em uso: ${usedMdiIcons.length}`);
+
 const sources = {
     svg: [
     // {
@@ -40,7 +98,11 @@ const sources = {
         // Custom JSON file
         // 'json/gg.json',
         // Iconify JSON file (@iconify/json is a package name, /json/ is directory where files are, then filename)
-        require.resolve('@iconify-json/mdi/icons.json'),
+        // Somente os ícones MDI encontrados no código (ver collectUsedMdiIcons acima).
+        {
+            filename: require.resolve('@iconify-json/mdi/icons.json'),
+            icons: usedMdiIcons,
+        },
         // require.resolve('@iconify-json/bxs/icons.json'),
         // {
         //   filename: require.resolve('@iconify-json/mdi/icons.json'),

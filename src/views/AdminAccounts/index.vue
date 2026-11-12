@@ -357,8 +357,11 @@ const saveAccount = async () => {
   }
 
   try {
+    // O backend localiza a conta pelo `id` do corpo e lê o nome em `name`
+    // (UpdateLoginAccountDTO). Sem esses dois campos a edição era sempre recusada.
     const payload = {
-      nome: model.value.nome.trim(),
+      id: Number(model.value.id),
+      name: model.value.nome.trim(),
       email: model.value.email.trim().toLowerCase(),
       userType: String(model.value.userType).trim(),
       institutionId: isPlatformAdmin.value ? Number(model.value.institutionId ?? 0) : Number(currentUser?.institutionId),

@@ -35,7 +35,6 @@ onMounted(() => {
   const result = auth.getUserStorage()
 
   user.value = result || {}
-  console.log(user.value)
 })
 </script>
 

@@ -34,6 +34,9 @@
         Administrados: {{ summary.Administrado }} •
         Atrasados: {{ summary.Atrasado }} •
         Pendentes: {{ summary.Pendente }}
+        <template v-if="summary.NaoAdministrado">
+          • Não administrados: {{ summary.NaoAdministrado }}
+        </template>
       </div>
     </header>
 
@@ -305,6 +308,7 @@ tr {
   &--success { color: #2e7d32; }
   &--error { color: #c62828; }
   &--secondary { color: #616161; }
+  &--warning { color: #b26a00; }
 }
 
 .print-footer {

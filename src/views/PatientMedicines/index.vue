@@ -68,6 +68,7 @@
                     :loading="loadingmedicinePatientClinicalConditions"
                     loading-text="Carregando... Aguarde"
                     class="text-no-wrap rounded-t-0"
+                    :items-per-page="-1"
                     hide-default-footer
                   >
                     <template #[`item.id`]="{ item }">
@@ -183,13 +184,15 @@
                         <VSpacer />
                         <VBtn
                           text
+                          :disabled="deleting"
                           @click="() => (showDeleteDialog = false, offerToDelete = null)"
                         >
                           Cancelar
                         </VBtn>
                         <VBtn
                           color="red"
-                          @click="deleteOffer"
+                          :loading="deleting"
+                          @click="deleteOffer()"
                         >
                           Apagar
                         </VBtn>
@@ -363,7 +366,6 @@ import { medicinePatientClinicalConditionsApi } from "@/api/medicine-patient-cli
 import { medicinesApi } from "@/api/medicines-api"
 import { patientsApi } from "@/api/patients-api"
 import { ensureSuccessfulResponse } from '@/utils/apiResponse'
-import 'cleave.js/dist/addons/cleave-phone.br'
 import { onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
@@ -465,6 +467,7 @@ const goToEdit = async itemOrId => {
 // Estado e fluxo de confirmação para exclusão
 const showDeleteDialog = ref(false)
 const offerToDelete = ref(null)
+const deleting = ref(false)
 
 /**
  * Guarda o id do registro a excluir e abre o diálogo de confirmação de exclusão.
@@ -480,23 +483,33 @@ const confirmDeleteOffer = id => {
  * Apesar do nome "Offer", remove a prescrição de medicamento do acolhido.
  */
 const deleteOffer = async id => {
-  const deleteId = id ?? offerToDelete.value
+  // O botão do diálogo chama `deleteOffer()` sem argumento e usa o id guardado na
+  // confirmação. Só vale como id um número/texto: se o Vue passar o evento de clique
+  // (quando o handler é ligado sem parênteses), ele é ignorado.
+  const deleteId = typeof id === 'number' || typeof id === 'string' ? id : offerToDelete.value
 
-  console.log("Deletando oferta com id:", deleteId)
+  if (deleteId === null || deleteId === undefined || deleteId === '') {
+    toast.error('Não foi possível identificar o registro para exclusão.')
+
+    return
+  }
+
+  deleting.value = true
   try {
     const response = await medicinePatientClinicalConditionsApi.remove(deleteId)
 
-    ensureSuccessfulResponse(response, 'Não foi possível remover a oferta.')
+    ensureSuccessfulResponse(response, 'Não foi possível remover a ministração programada.')
 
     await getMedicinePatientClinicalCondicions()
-    toast.success("Oferta removida com sucesso.")
+    toast.success('Ministração programada removida com sucesso.')
     showDeleteDialog.value = false
     offerToDelete.value = null
   } catch (error) {
-    console.error("Erro ao apagar a oferta:", error)
-    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? "Não foi possível remover a oferta. Tente novamente mais tarde.")
+    console.error('Erro ao apagar a ministração programada:', error)
+    toast.error(error.response?.data?.errorMessage ?? error.response?.data?.message ?? error.message ?? 'Não foi possível remover a ministração programada. Tente novamente mais tarde.')
+  } finally {
+    deleting.value = false
   }
-
 }
 
 
@@ -646,7 +659,7 @@ const closeAdministrationDialog = () => {
 /**
  * Valida o diálogo e registra a administração do medicamento
  * (`medicationAdministrationsApi.create`) com status, data/hora administrada e observações.
- * O horário previsto enviado é a data de início da prescrição (ou o horário, se não houver).
+ * O horário previsto enviado é o dia da administração com o horário planejado da prescrição.
  * Se der certo, fecha o diálogo e recarrega a lista.
  */
 const saveAdministration = async () => {
@@ -661,13 +674,26 @@ const saveAdministration = async () => {
   savingAdministration.value = true
 
   try {
-    // TODO: confirme os nomes reais dos campos do seu DTO de MedicationAdministration
+    // O input datetime-local devolve "aaaa-mm-ddTHH:mm" já no horário local. Ele é
+    // enviado assim (só acrescentando os segundos), sem toISOString(): o backend
+    // trabalha com o horário de parede de São Paulo, e converter para UTC somaria
+    // 3 horas (uma dose das 22:30 seria gravada como 01:30 do dia seguinte).
+    const administeredLocal = administrationForm.value.administeredDateTime
+    const administeredDateTime = administeredLocal.length === 16 ? `${administeredLocal}:00` : administeredLocal
+
+    // Horário previsto = dia da administração + horário planejado da prescrição.
+    // (Antes ia a data de início da prescrição, igual em todos os registros: o
+    // backend recusava a segunda dose por "já existe nesse horário".)
+    // Sem horário planejado, vai 00:00 e o backend deriva o horário da prescrição.
+    const plannedTime = formatTime(selectedItem.value.administrationTime)
+    const scheduledDateTime = `${administeredLocal.slice(0, 10)}T${plannedTime === '-' ? '00:00' : plannedTime}:00`
+
     const payload = {
       medicinePatientClinicalConditionId: selectedItem.value.id,
       patientId: selectedItem.value.patientId,
       employeeId: selectedItem.value.responsibleEmployeeId,
-      scheduledDateTime: selectedItem.value.startDate || selectedItem.value.administrationTime,
-      administeredDateTime: new Date(administrationForm.value.administeredDateTime).toISOString(),
+      scheduledDateTime,
+      administeredDateTime,
       status: administrationForm.value.status,
       observations: administrationForm.value.observations?.trim() || '',
     }

@@ -706,19 +706,28 @@ const getList = value => {
 }
 
 /**
- * Converte uma data vinda da API para o formato "aaaa-mm-dd" aceito pelo
- * input de data; se não for uma data válida, usa os 10 primeiros caracteres do texto.
+ * Converte uma data vinda da API para o formato "aaaa-mm-dd" aceito pelo input de data.
+ * A API devolve o horário de parede (ex.: "2026-05-10T23:59:59"), então o dia é lido
+ * direto do texto. Converter para UTC (toISOString) aqui empurraria as datas de fim
+ * de dia para o dia seguinte.
  */
 const formatDateInput = value => {
   if (!value)
     return ''
 
+  const text = String(value)
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(text))
+    return text.slice(0, 10)
+
   const date = new Date(value)
 
   if (Number.isNaN(date.getTime()))
-    return String(value).slice(0, 10)
+    return text.slice(0, 10)
 
-  return date.toISOString().slice(0, 10)
+  const pad = number => String(number).padStart(2, '0')
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 /**
@@ -826,7 +835,7 @@ const loadEmployeeOptions = async () => {
 /**
  * Busca os detalhes do acolhido da rota (`patientsApi.getPatientDetails`) e preenche
  * o formulário: dados pessoais (CPF e telefone com máscara, datas no formato do input),
- * responsáveis e medicamentos programados. Os medicamentos carregados recebem `id: 0`.
+ * responsáveis e medicamentos programados (cada um com o id da sua prescrição).
  * Em erro, preenche `loadError`.
  */
 const loadPatient = async () => {
@@ -857,12 +866,18 @@ const loadPatient = async () => {
       address: responsible.address ?? '',
     }))
 
-    model.value.scheduledMedicines = getList(data?.medicines).map(medicine => ({
-      id: 0,
+    // `scheduledMedicines` traz cada prescrição com o seu próprio id. Esse id volta no
+    // payload para o backend ATUALIZAR a prescrição; sem ele (id 0) o backend entende
+    // que é um medicamento novo e a prescrição seria duplicada a cada edição.
+    // `medicines` é o formato antigo (sem id da prescrição), mantido como reserva.
+    const hasScheduledMedicines = data?.scheduledMedicines !== undefined && data?.scheduledMedicines !== null
+
+    model.value.scheduledMedicines = getList(hasScheduledMedicines ? data.scheduledMedicines : data?.medicines).map(medicine => ({
+      id: hasScheduledMedicines ? Number(medicine.id) || 0 : 0,
       medicineId: Number(medicine.medicineId ?? medicine.id),
       medicineName: medicine.medicineName ?? medicine.name ?? '',
-      patientClinicalConditionId: 0,
-      clinicalConditionId: Number(medicine.clinicalConditionId ?? medicine.patientClinicalConditionId) || null,
+      patientClinicalConditionId: Number(medicine.patientClinicalConditionId) || 0,
+      clinicalConditionId: Number(medicine.clinicalConditionId) || null,
       clinicalConditionName: medicine.clinicalConditionName ?? medicine.clinicalCondition ?? '',
       prescribedDosage: medicine.prescribedDosage ?? medicine.dosage ?? '',
       frequency: medicine.frequency ?? '',
@@ -966,7 +981,7 @@ const addScheduledMedicine = () => {
     id: 0,
     medicineId: selectedMedicine.value.id,
     medicineName: selectedMedicine.value.name,
-    patientClinicalConditionId: 0,
+    patientClinicalConditionId: Number(selectedMedicineClinicalCondition.value.id) || 0,
     clinicalConditionId: selectedMedicineClinicalCondition.value.clinicalConditionId,
     clinicalConditionName: selectedMedicineClinicalCondition.value.clinicalConditionName,
     prescribedDosage: medicineForm.value.prescribedDosage,
@@ -1054,14 +1069,19 @@ const submit = async () => {
       scheduledMedicines: model.value.scheduledMedicines.map(medicine => ({
         id: Number(medicine.id) || 0,
         medicineId: Number(medicine.medicineId),
-        patientClinicalConditionId: 0,
-        clinicalConditionId: Number(medicine.clinicalConditionId),
+        patientClinicalConditionId: Number(medicine.patientClinicalConditionId) || 0,
+        clinicalConditionId: Number(medicine.clinicalConditionId) || 0,
         prescribedDosage: medicine.prescribedDosage,
         frequency: medicine.frequency,
-        administrationTime: medicine.administrationTime?.length === 5 ? `${medicine.administrationTime}:00` : medicine.administrationTime,
+        administrationTime: medicine.administrationTime
+          ? (medicine.administrationTime.length === 5 ? `${medicine.administrationTime}:00` : medicine.administrationTime)
+          : null,
         responsibleEmployeeId: Number(medicine.responsibleEmployeeId) || 0,
-        startDate: medicine.startDate ? new Date(`${medicine.startDate}T00:00:00`).toISOString() : null,
-        endDate: medicine.endDate ? new Date(`${medicine.endDate}T00:00:00`).toISOString() : null,
+
+        // Datas no horário de parede (sem converter para UTC): o backend guarda o
+        // horário local, e o fim do período vale até o último segundo do dia.
+        startDate: medicine.startDate ? `${medicine.startDate}T00:00:00` : null,
+        endDate: medicine.endDate ? `${medicine.endDate}T23:59:59` : null,
         observations: medicine.observations,
       })),
     }

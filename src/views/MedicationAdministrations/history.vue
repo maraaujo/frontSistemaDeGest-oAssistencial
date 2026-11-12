@@ -88,6 +88,7 @@
           loading-text="Carregando... Aguarde"
           no-data-text="Nenhum registro de administração encontrado."
           class="text-no-wrap"
+          :items-per-page="-1"
           hide-default-footer
         >
           <template #[`item.id`]="{ item }">

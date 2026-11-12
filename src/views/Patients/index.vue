@@ -150,10 +150,6 @@
             {{ formatDate(item.birthDate) }}
           </template>
 
-          <template #[`item.phone`]="{ item }">
-            {{ item.phone ? formatPhone(item.phone) : '-' }}
-          </template>
-
           <template #[`item.gender`]="{ item }">
             <VChip
               size="small"
@@ -213,7 +209,7 @@
 <script setup>
 import { clinicalConditionsApi } from '@/api/clinical-conditions-api';
 import { patientsApi } from '@/api/patients-api';
-import { formatCpf, formatPhone } from '@/utils/validators';
+import { formatCpf } from '@/utils/validators';
 import { onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
@@ -250,7 +246,6 @@ const genderOptions = [
 const headers = [
   { title: 'Id', key: 'id', sortable: true },
   { title: 'Nome', key: 'name', sortable: true },
-  { title: 'Telefone', key: 'phone', sortable: true },
   { title: 'Data de nascimento', key: 'birthDate', sortable: true },
   { title: 'Sexo', key: 'gender', sortable: true },
   { title: 'Ações', key: 'actions', sortable: false },

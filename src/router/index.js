@@ -236,6 +236,13 @@ const router = createRouter({
   component: () => import('@/views/AdminMaintenance/index.vue'),
   meta: { requiresAuth: true, superAdmin: true, layout: 'content', },
 },
+{
+  // Logs de auditoria: quem criou, alterou ou excluiu o quê (exclusiva do admin da plataforma).
+  path: '/admin/logs',
+  name: 'admin-logs',
+  component: () => import('@/views/AdminLogs/index.vue'),
+  meta: { requiresAuth: true, superAdmin: true, layout: 'content', },
+},
 
 // Perfil do usuário logado (acessado pelo menu do avatar).
 {

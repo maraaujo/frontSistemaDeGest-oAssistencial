@@ -82,4 +82,9 @@ export default [
     icon: 'mdi-broom',
     to: { name: 'admin-maintenance' },
   },
+  {
+    name: 'Logs de auditoria',
+    icon: 'mdi-text-box-search-outline',
+    to: { name: 'admin-logs' },
+  },
 ]
